@@ -1,0 +1,20 @@
+# Ignorar a pasta do ambiente virtual
+venv/
+
+# Ignorar cache do Python
+__pycache__/
+
+# Ignorar arquivos temporários
+*.pyc
+*.pyo
+
+# Ignorar arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Ignorar binários e arquivos de saída
+*.bin
+
+# (opcional) Ignorar o relatório PDF e ZIPs temporários
+relatorio_final.pdf
+*.zip
