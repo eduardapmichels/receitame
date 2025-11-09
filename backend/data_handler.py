@@ -12,7 +12,7 @@ try:
 except FileNotFoundError:
     print("The file 'data/recipes_extended.csv' was not found.")
 
-RECIPE_STRUCT = struct.Struct("i120s50s500sii20s4?")
+RECIPE_STRUCT = struct.Struct("i120s50s500sii20s4?")manu
 r = Path("data/recipes.bin")
 r.parent.mkdir(parents=True, exist_ok=True)
 total_recipes = 0 # Initialize recipe counter
