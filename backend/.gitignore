@@ -18,3 +18,4 @@ Thumbs.db
 # (opcional) Ignorar o relatório PDF e ZIPs temporários
 relatorio_final.pdf
 *.zip
+*.csv
