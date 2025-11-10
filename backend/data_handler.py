@@ -1,16 +1,17 @@
 import pandas as pd
 from pathlib import Path
 import struct
+import json
+
+total_ingredients = 0 # Initialize recipe counter
+total_recipes = 0 # Initialize recipe counter
 
  # Functions to handle ingredients and their relations
 def add_ingredients(ingredients_list, ingredients, ingredients_measurement, recipe_id):           
-    if recipe_id==1:
-        print(ingredients_list)
-        print(ingredients_measurement)
-    
     global total_ingredients
     global recipe_ingredients
     for a in range(len(ingredients_list)):
+
         if ingredients_list[a] not in ingredients: # New ingredient
             total_ingredients += 1
             ingredient_id = len(ingredients) + 1
@@ -40,6 +41,9 @@ def build_recipe_ingredient_relation(recipe_id, ingredient_id, measurement, ingr
 try:
     #Try to read the extended recipes dataset
     recipes = pd.read_csv('data/recipes_extended.csv')
+    recipes['ingredients_canonical'] = recipes['ingredients_canonical'].apply(json.loads)
+    recipes['ingredients_raw'] = recipes['ingredients_raw'].apply(json.loads)
+    recipes['cuisine_list'] = recipes['cuisine_list'].apply(json.loads)
     ingredients = {}
     recipe_ingredients = 0
 except FileNotFoundError:
@@ -48,12 +52,12 @@ except FileNotFoundError:
 RECIPE_STRUCT = struct.Struct("i120s50s5500si20s4?")
 r = Path("data/recipes.bin")
 r.parent.mkdir(parents=True, exist_ok=True)
-total_recipes = 0 # Initialize recipe counter
+
 
 INGREDIENT_STRUCT = struct.Struct("i70s")
 i = Path("data/ingredients.bin")
 i.parent.mkdir(parents=True, exist_ok=True)
-total_ingredients = 0 # Initialize recipe counter
+
 
 RECIPE_INGREDIENT_STRUCT = struct.Struct("iii70s")
 ri = Path("data/recipe_ingredients.bin")
@@ -63,29 +67,29 @@ media_ingredients = 0 #Average ingredients per recipe
 total_time = 0 #Total time for all recipes
 
 with open("recipes.bin", "wb") as f_recipes, open("ingredients.bin", "wb") as f_ingredients, open("recipe_ingredients.bin", "wb") as f_recipe_ingredients:
-#for row in recipes.itertuples(index=True):
-    row = recipes.iloc[0]
-    total_recipes += 1
-    add_ingredients(row.ingredients_canonical, ingredients, row.ingredients_raw, total_recipes)
-    time = row.est_prep_time_min + row.est_cook_time_min
-    total_time += time
-    f_recipes.write(RECIPE_STRUCT.pack(
-        total_recipes,
-        row.recipe_title.encode('utf-8'),
-        row.subcategory.encode('utf-8'),
-        row.directions.encode('utf-8'),
-        time,
-        row.difficulty.encode('utf-8'),
-        row.is_vegan,
-        row.is_vegetarian,
-        row.is_dairy_free,
-        row.is_gluten_free,
-    ))
+    for row in recipes.itertuples(index=True):
+        row = recipes.iloc[0]
+        total_recipes += 1
+        add_ingredients(row.ingredients_canonical, ingredients, row.ingredients_raw, total_recipes)
+        time = row.est_prep_time_min + row.est_cook_time_min
+        total_time += time
+        f_recipes.write(RECIPE_STRUCT.pack(
+            total_recipes,
+            row.recipe_title.encode('utf-8'),
+            row.subcategory.encode('utf-8'),
+            row.directions.encode('utf-8'),
+            time,
+            row.difficulty.encode('utf-8'),
+            row.is_vegan,
+            row.is_vegetarian,
+            row.is_dairy_free,
+            row.is_gluten_free,
+        ))
 
 
 print(f"Total Recipes: {total_recipes}")
 with open("recipes.bin", "rb") as f:
-    for _ in range(5):
+    for _ in range(15):
         bytes_lidos = f.read(RECIPE_STRUCT.size)
         if not bytes_lidos:
             break
