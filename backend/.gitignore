@@ -16,11 +16,5 @@ Thumbs.db
 *.bin
 
 # (opcional) Ignorar o relatório PDF e ZIPs temporários
-<<<<<<< HEAD
 *.csv
 *.json
-=======
-relatorio_final.pdf
-*.zip
-*.csv
->>>>>>> duda
