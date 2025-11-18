@@ -106,6 +106,10 @@ def add_subcategories(recipe_id, subcategory):
         total_subcategories += 1
         subcategory_id = total_subcategories
         subcategories[subcategory] = subcategory_id
+        f_subcategories.write(SUBCATEGORY_STRUCT.pack(
+            subcategory_id,
+            subcategory.encode('utf-8')
+        ))
     else:
         subcategory_id = subcategories[subcategory]
 
