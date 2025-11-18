@@ -12,7 +12,7 @@ total_cuisines = 0 # Initialize cuisine counter
 total_subcategories = 0 # Initialize subcategory counter
 
 
-RECIPE_STRUCT = struct.Struct("i120s50s5500si20s4?")
+RECIPE_STRUCT = struct.Struct("i120si5500si20s4?")
 r = Path("data/recipes.bin")
 r.parent.mkdir(parents=True, exist_ok=True)
 
@@ -37,10 +37,6 @@ ri.parent.mkdir(parents=True, exist_ok=True)
 RECIPE_CUISINE_STRUCT = struct.Struct("ii")
 rc = Path("data/recipe_cuisines.bin")
 rc.parent.mkdir(parents=True, exist_ok=True)
-
-RECIPE_SUBCATEGORY_STRUCT = struct.Struct("ii")
-rs = Path("data/recipe_subcategories.bin")
-rs.parent.mkdir(parents=True, exist_ok=True)
 
 media_ingredients = 0 #Average ingredients per recipe
 total_time = 0 #Total time for all recipes
@@ -110,21 +106,10 @@ def add_subcategories(recipe_id, subcategory):
         total_subcategories += 1
         subcategory_id = total_subcategories
         subcategories[subcategory] = subcategory_id
-        f_subcategories.write(SUBCATEGORY_STRUCT.pack( # Write subcategory to binary file
-            subcategory_id,
-            subcategory.encode('utf-8'),
-        ))
     else:
         subcategory_id = subcategories[subcategory]
-    build_recipe_subcategory_relation(recipe_id, subcategory_id)
-    return 0
 
-def build_recipe_subcategory_relation(recipe_id, subcategory_id):
-    f_recipe_subcategories.write(RECIPE_SUBCATEGORY_STRUCT.pack( # Write relation to binary file
-        recipe_id,
-        subcategory_id,
-    ))
-    return 0
+    return subcategory_id
 
 
 t0=time.time()
@@ -148,18 +133,18 @@ tcsv = time.time()
 print(f"Time to read CSV: {tcsv-t0} seconds")
 
 t1 = time.time()
-with open("recipes.bin", "wb") as f_recipes, open("ingredients.bin", "wb") as f_ingredients, open("recipe_ingredients.bin", "wb") as f_recipe_ingredients, open("cuisines.bin", "wb") as f_cuisines, open("recipe_cuisines.bin", "wb") as f_recipe_cuisines, open("subcategories.bin", "wb") as f_subcategories, open("recipe_subcategories.bin", "wb") as f_recipe_subcategories:
+with open("recipes.bin", "wb") as f_recipes, open("ingredients.bin", "wb") as f_ingredients, open("recipe_ingredients.bin", "wb") as f_recipe_ingredients, open("cuisines.bin", "wb") as f_cuisines, open("recipe_cuisines.bin", "wb") as f_recipe_cuisines, open("subcategories.bin", "wb") as f_subcategories:
     for row in recipes.itertuples(index=True):
         total_recipes += 1
         add_ingredients(row.ingredients_canonical, ingredients, row.ingredients_raw, total_recipes)
         add_cuisines(total_recipes, row.cuisine_list)
-        add_subcategories(total_recipes, row.subcategory)
+        subcategory_id = add_subcategories(total_recipes, row.subcategory)
         time_recipe = row.est_prep_time_min + row.est_cook_time_min
         total_time += time_recipe
         f_recipes.write(RECIPE_STRUCT.pack(
             total_recipes,
             row.recipe_title.encode('utf-8'),
-            row.subcategory.encode('utf-8'),
+            subcategory_id,
             row.directions.encode('utf-8'),
             time_recipe,
             row.difficulty.encode('utf-8'),
@@ -169,68 +154,5 @@ with open("recipes.bin", "wb") as f_recipes, open("ingredients.bin", "wb") as f_
             row.is_gluten_free,
         ))
 tbin = time.time()
-print(f"Time to write binary files: {tbin-t1} seconds")
-
-print(f"\n\nTotal Recipes: {total_recipes}")
-
-import struct
-with open("recipes.bin", "rb") as f:
-    for _ in range(5):
-        bytes_lidos = f.read(RECIPE_STRUCT.size)
-        if not bytes_lidos:
-            break
-        unpacked = RECIPE_STRUCT.unpack(bytes_lidos)
-
-        recipe_id = unpacked[0]
-        recipe_title = unpacked[1].decode('utf-8').rstrip('\x00')
-        subcategory = unpacked[2].decode('utf-8').rstrip('\x00')
-        directions = unpacked[3].decode('utf-8').rstrip('\x00')
-        total_time = unpacked[4]
-        difficulty = unpacked[5].decode('utf-8').rstrip('\x00')
-        is_vegan, is_vegetarian, is_dairy_free, is_gluten_free = unpacked[6:]
-
-        print(f"ID: {recipe_id}, Title: {recipe_title}, Subcategory: {subcategory}, Time: {total_time}, Difficulty: {difficulty}")
-
-
-print(f"\n\nTotal Ingredients: {total_ingredients}")
-with open("ingredients.bin", "rb") as f:
-    for _ in range(5):
-        bytes_lidos = f.read(INGREDIENT_STRUCT.size)
-        if not bytes_lidos:
-            break
-        unpacked = INGREDIENT_STRUCT.unpack(bytes_lidos)
-
-        ingredient_id = unpacked[0]
-        ingredient_name = unpacked[1].decode('utf-8').rstrip('\x00')
-
-        print(f"ID: {ingredient_id}, Name: {ingredient_name}")
-
-print(f"\n\nTotal Cuisines: {total_cuisines}")
-with open("cuisines.bin", "rb") as f:
-    for _ in range(5):
-        bytes_lidos = f.read(CUISINE_STRUCT.size)
-        if not bytes_lidos:
-            break
-        unpacked = CUISINE_STRUCT.unpack(bytes_lidos)
-
-        cuisine_id = unpacked[0]
-        cuisine_name = unpacked[1].decode('utf-8').rstrip('\x00')
-
-        print(f"ID: {cuisine_id}, Name: {cuisine_name}")
-
-print(f"\n\nTotal Subcategories: {total_subcategories}")
-with open("subcategories.bin", "rb") as f:
-    for _ in range(5):
-        bytes_lidos = f.read(SUBCATEGORY_STRUCT.size)
-        if not bytes_lidos:
-            break
-        unpacked = SUBCATEGORY_STRUCT.unpack(bytes_lidos)
-
-        subcategory_id = unpacked[0]
-        subcategory_name = unpacked[1].decode('utf-8').rstrip('\x00')
-
-        print(f"ID: {subcategory_id}, Name: {subcategory_name}")
-
 tend = time.time()
 total_elapsed = tend - start_time
-print(f"\n\nTotal time elapsed: {total_elapsed} seconds")
