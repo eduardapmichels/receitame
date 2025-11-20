@@ -120,6 +120,7 @@ t0=time.time()
 try:
     #Try to read the extended recipes dataset
     recipes = pd.read_csv('data/recipes_extended.csv')
+    recipes = recipes.iloc[0:300] # For testing purposes, limit to first 300 recipes
     recipes['ingredients_canonical'] = recipes['ingredients_canonical'].str.lower()
     recipes['ingredients_canonical'] = recipes['ingredients_canonical'].apply(json.loads)
     recipes['ingredients_raw'] = recipes['ingredients_raw'].str.lower()
@@ -137,7 +138,7 @@ tcsv = time.time()
 print(f"Time to read CSV: {tcsv-t0} seconds")
 
 t1 = time.time()
-with open("recipes.bin", "wb") as f_recipes, open("ingredients.bin", "wb") as f_ingredients, open("recipe_ingredients.bin", "wb") as f_recipe_ingredients, open("cuisines.bin", "wb") as f_cuisines, open("recipe_cuisines.bin", "wb") as f_recipe_cuisines, open("subcategories.bin", "wb") as f_subcategories:
+with open(r, "wb") as f_recipes, open(i, "wb") as f_ingredients, open(ri, "wb") as f_recipe_ingredients, open(c, "wb") as f_cuisines, open(rc, "wb") as f_recipe_cuisines, open(s, "wb") as f_subcategories:
     for row in recipes.itertuples(index=True):
         total_recipes += 1
         add_ingredients(row.ingredients_canonical, ingredients, row.ingredients_raw, total_recipes)
