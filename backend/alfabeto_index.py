@@ -89,9 +89,9 @@ def build_alfabeto_index():
 
         print("Índice em ordem alfabetica criado com sucesso")
     except FileNotFoundError:
-        print(f"ERRO: ARQUIVO NAO ENCONTRADO EM {bin_path}. VERIFIQUE O CAMINHP")
+        print(f"ERRO: ARQUIVO NAO ENCONTRADO EM {bin_path}. VERIFIQUE O CAMINHO")
     except Exception as e:
-        print(f"ERRO dirante a construcao do indic: {e}")
+        print(f"ERRO dirante a construcao do indice: {e}")
 
 
 if __name__ =="__main__":
