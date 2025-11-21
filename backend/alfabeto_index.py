@@ -1,13 +1,12 @@
 import struct
-import json
 import re
 import time
+import pickle
 from pathlib import Path
 
 
 from data_handler import RECIPE_STRUCT
 
-start = time.time()
 
 class TrieNode:
     def __init__(self):
@@ -37,9 +36,11 @@ class Trie:
             "children":{char: self.to_dict(child) for char, child in sorted(node.children.items())}
         }
     
-
+#tira simbolo e espacos a mais 
 def clean_title(title):
-    return re.sub(r'[^A-Za-zÀ-ÿ ]+', '',title).lower().strip()
+    cleaned =  re.sub(r'[^A-Za-zÀ-ÿ ]+', '',title)
+    cleaned = re.sub(r'\s+', ' ', cleaned)
+    return cleaned.lower().strip()
 
 
 
@@ -50,7 +51,7 @@ lê o registro
 pega o título
 insere na TRIE com o offset
 converte a TRIE para dicionário
-Salva em recipes_index_alpha.json"""
+Salva em recipes_index.bin"""
 
 def build_alfabeto_index():
     trie = Trie()
@@ -61,6 +62,7 @@ def build_alfabeto_index():
         with open(bin_path, "rb") as f:
             offset = 0
 
+            start = time.time()
 
             while True:
                 data = f.read(RECIPE_STRUCT.size)
@@ -76,14 +78,14 @@ def build_alfabeto_index():
 
             print("Tempo para ler + mongar trie;", time.time() - start, "segundos")
 
-        json_start = time.time()
+        bin_start = time.time()
 
-        index_path =  Path("data/recipes_index_alpha.json")
+        index_path =  Path("data/recipes_index.bin")
 
-        with index_path.open("w", encoding="utf-8") as f:
-            json.dump(trie.to_dict(), f, ensure_ascii=False)
+        with index_path.open("wb") as f:
+            pickle.dump(trie, f)
 
-        print("tempo para gerar json",time.time() - json_start, "segundos")
+        print("tempo para gerar bin",time.time() - bin_start, "segundos")
 
         print("Índice em ordem alfabetica criado com sucesso")
     except FileNotFoundError:
