@@ -7,6 +7,7 @@ from pathlib import Path
 
 from data_handler import RECIPE_STRUCT
 
+start = time.time()
 
 class TrieNode:
     def __init__(self):
@@ -60,7 +61,6 @@ def build_alfabeto_index():
         with open(bin_path, "rb") as f:
             offset = 0
 
-            start = time.time()
 
             while True:
                 data = f.read(RECIPE_STRUCT.size)
