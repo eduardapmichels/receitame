@@ -4,6 +4,14 @@ import struct
 import json
 import re
 import time
+from Btree.BTree import BTree
+import jsonpickle
+
+
+
+bt = BTree(50) #Initialize B+Tree (time)
+
+
 
 start_time = time.time()
 total_ingredients = 0 # Initialize recipe counter
@@ -120,7 +128,6 @@ t0=time.time()
 try:
     #Try to read the extended recipes dataset
     recipes = pd.read_csv('data/recipes_extended.csv')
-    recipes = recipes.iloc[0:300] # For testing purposes, limit to first 300 recipes
     recipes['ingredients_canonical'] = recipes['ingredients_canonical'].str.lower()
     recipes['ingredients_canonical'] = recipes['ingredients_canonical'].apply(json.loads)
     recipes['ingredients_raw'] = recipes['ingredients_raw'].str.lower()
@@ -146,6 +153,7 @@ with open(r, "wb") as f_recipes, open(i, "wb") as f_ingredients, open(ri, "wb") 
         subcategory_id = add_subcategories(total_recipes, row.subcategory)
         time_recipe = row.est_prep_time_min + row.est_cook_time_min
         total_time += time_recipe
+        bt.insert_key(time_recipe, total_recipes)
         f_recipes.write(RECIPE_STRUCT.pack(
             total_recipes,
             row.recipe_title.encode('utf-8'),
@@ -161,3 +169,31 @@ with open(r, "wb") as f_recipes, open(i, "wb") as f_ingredients, open(ri, "wb") 
 tbin = time.time()
 tend = time.time()
 total_elapsed = tend - start_time
+print(f"\n\n total {total_recipes}")
+
+bt.print_tree(bt.root)
+
+def key_to_dict(key: "Key"):
+    return {
+        "time": key.time,
+        "recipes": key.recipes
+    }
+
+def node_to_dict(node: "Node"):
+    node_dict = {
+        "is_leaf": node.is_leaf,
+        "keys": [key_to_dict(k) for k in node.nodes]
+    }
+    if not node.is_leaf:
+        node_dict["children"] = [node_to_dict(c) for c in node.children]
+    # opcional: adicionar next nas folhas
+    if node.is_leaf and node.next is not None:
+        node_dict["next"] = [k.time for k in node.next.nodes]
+    return node_dict
+
+# Convertendo a árvore inteira
+btree_dict = node_to_dict(bt.root)
+
+# Salvando em JSON legível
+with open("bplustree.json", "w", encoding="utf-8") as f:
+    json.dump(btree_dict, f, indent=4, ensure_ascii=False)
