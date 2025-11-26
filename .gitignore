@@ -1,0 +1,9 @@
+# Ignorar todos os arquivos .csv
+*.csv
+
+# Ignorar todos os arquivos .bin
+*.bin
+
+# Python cache
+__pycache__/
+*.pyc
