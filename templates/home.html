@@ -9,11 +9,9 @@
     <div class="container">
         <div class="box">
            <a href="{% url 'csvprocess' %}"> <button type="button" class="btn btn-primary btn-lg">Processar CSV</button></a>
-
-            
         </div>
         <div>
-            <p>{{message}}</p>
+            <p>{{error}}</p>
             {% if message %}
                 <li>
                     <ul>Receitas totais: {{total_recipes}}</ul>
@@ -21,6 +19,5 @@
                 </li>
             {% endif %}
         </div>
-
     </div>
 {% endblock %}

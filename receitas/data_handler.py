@@ -5,9 +5,10 @@ import json
 import re
 import time
 from receitas.Btree.BTree import BTree
-import jsonpickle
 import pickle
 from pathlib import Path
+
+
 
 total_ingredients = 0 # Initialize recipe counter
 total_recipes = 0 # Initialize recipe counter
@@ -36,7 +37,7 @@ def data_handler():
     
 
 
-    RECIPE_STRUCT = struct.Struct("i120si5500si20s4?")
+    RECIPE_STRUCT = struct.Struct("i120si5500si20s4?i")
     r = Path("data/recipes.bin")
     r.parent.mkdir(parents=True, exist_ok=True)
 
@@ -121,6 +122,7 @@ def data_handler():
             recipe_id,
             cuisine_id,
         ))
+
         return 0
 
     # Function to handle subcategories
@@ -153,6 +155,7 @@ def data_handler():
         recipes['ingredients_raw'] = recipes['ingredients_raw'].apply(json.loads)
         recipes['cuisine_list'] = recipes['cuisine_list'].str.lower()
         recipes['cuisine_list'] = recipes['cuisine_list'].apply(json.loads)
+        recipes.drop_duplicates(subset=['recipe_title'])
         ingredients = {}
         cuisines = {}
         subcategories = {}
@@ -180,6 +183,7 @@ def data_handler():
             time_recipe = row.est_prep_time_min + row.est_cook_time_min
             total_time += time_recipe
             bt.insert_key(time_recipe, total_recipes)
+            id_relacao_ingrediente = recipe_ingredients
             f_recipes.write(RECIPE_STRUCT.pack(
                 total_recipes,
                 row.recipe_title.encode('utf-8'),
@@ -191,6 +195,7 @@ def data_handler():
                 row.is_vegetarian,
                 row.is_dairy_free,
                 row.is_gluten_free,
+                id_relacao_ingrediente          #id da 1° relação receita-ingrediente
             ))
     tbin = time.time()
     tend = time.time()
@@ -231,6 +236,9 @@ def data_handler():
     with open(pickle_path, "wb") as f:
         # protocol mais recente
         pickle.dump(bt, f, protocol=pickle.HIGHEST_PROTOCOL)
+    
+
+    
 
     return {"total_recipes": total_recipes, "time": total_elapsed, "message": "Success"}
 

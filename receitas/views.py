@@ -26,6 +26,7 @@ def list_all(request):
 
     bt = load_btree_pickle()
 
+
     # página
     page = int(request.GET.get("page", 1))
 
@@ -54,7 +55,9 @@ def list_all(request):
         min_time = None
         max_time = None
 
-    total_r_found, recipes = get_recipes_page(
+
+
+    pages_max, recipes, total_r_found = get_recipes_page(
         bt,
         page=page,
         per_page=200,
@@ -72,7 +75,8 @@ def list_all(request):
     context = {
         "recipes": recipes,
         "page": page,
-        "count": total_r_found,
+        "count": pages_max,
+        "total_results": total_r_found,
         "checked": checked,
         "min": min_time,
         "max": max_time,
@@ -84,15 +88,6 @@ def list_all(request):
 
 
 def read_recipe(request):
-    return
-
-def update_recipe(request):
-    return
-
-def add_recipe(request):
-    return
-
-def remove_recipe(request):
     return
 
 def list_vegan(request):
@@ -110,6 +105,13 @@ def list_dairy_free(request):
     context = {
     }
     return render(request, 'home.html', context)
+
+def list_cuisines(request):
+    context = {
+
+    }
+    return render(request, 'home.html', context)
+
 def list_easy(request):
     context = {
 
@@ -125,16 +127,8 @@ def list_difficult(request):
 
     }
     return render(request, 'home.html', context)
-def list_ingredients(request):
-    context = {
-    }
-    return render(request, 'home.html', context)
+
 def list_categories(request):
     context = {
-    }
-    return render(request, 'home.html', context)
-def list_cuisines(request):
-    context = {
-
     }
     return render(request, 'home.html', context)

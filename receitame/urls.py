@@ -20,7 +20,6 @@ from receitas import views
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('', views.index, name = "home"),
     path('process_csv/', views.csv_process, name="csvprocess"),
     path('all_recipes/', views.list_all, name="list_all"),
@@ -29,11 +28,9 @@ urlpatterns = [
     path('vegetarian/', views.list_vegetarian, name="list_vegetarian"),
     path('dairy_free/', views.list_dairy_free, name="list_dairy_free"),
     path('gluten_free/', views.list_gluten_free, name="list_gluten_free"),
-    path('ingredients/', views.list_ingredients, name="list_ingredient"),
     path('easy/', views.list_easy, name="list_easy"),
     path('medium/', views.list_medium, name="list_medium"),
     path('difficult/', views.list_difficult, name="list_difficult"),
-    path('categories/', views.list_categories, name="list_categories"),
     path('cuisines/', views.list_cuisines, name="list_cuisines"),
 ]
 

@@ -35,8 +35,17 @@
 
                     <button class="btn btn-primary">Apply filter</button>
                 </div>
+            {% else %}
+                <div class="input-group mb-3">
+                    <span class="input-group-text" id="basic-addon1"><button style = "border-color: transparent;background-color: transparent;">Pesquisar</button></span>
+                    <input type="text" class="form-control" placeholder="Digite o título que procuras..." aria-describedby="basic-addon1">
+                </div>
+            
             {% endif %}
         </form>
+
+        <p><strong>{{ total_results }}</strong> receitas encontradas</p>
+
 
 
      
@@ -54,7 +63,7 @@
             {% for time, rid, rtitle in recipes %}
                 <tr>
                     
-                    <td><a href="#">{{ rtitle }}</a></td>
+                    <td><a href="">{{ rtitle }}</a></td>
                     <td>{{ time }}</td>
                     <td>{{ rid }}</td>
                 </tr>
