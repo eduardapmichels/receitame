@@ -1,0 +1,26 @@
+{% extends 'menu.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'index.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="box">
+           <a href="{% url 'csvprocess' %}"> <button type="button" class="btn btn-primary btn-lg">Processar CSV</button></a>
+
+            
+        </div>
+        <div>
+            <p>{{message}}</p>
+            {% if message %}
+                <li>
+                    <ul>Receitas totais: {{total_recipes}}</ul>
+                    <ul>Tempo de processamento: {{elapsed_time}}</ul>
+                </li>
+            {% endif %}
+        </div>
+
+    </div>
+{% endblock %}

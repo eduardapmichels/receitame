@@ -1,0 +1,21 @@
+#container_receitas{
+    margin-top: 5%;
+    margin-left: 20%;
+    margin-right: 20%;
+    margin-bottom: 5%;
+}
+
+.empty-center {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.range {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}

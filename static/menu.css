@@ -1,0 +1,7 @@
+#navbarContainer{
+    display: flex;
+    justify-content: space-between; /* coloca uma div na esquerda e outra na direita */
+    align-items: center; /* opcional, centraliza verticalmente */
+    padding: 10px;
+    border: 1px solid #000;
+}
