@@ -7,6 +7,12 @@ import time
 from receitas.Btree.BTree import BTree
 import pickle
 from pathlib import Path
+from receitas.alfabeto_index import TrieNode
+from receitas.alfabeto_index import Trie
+from receitas.alfabeto_index import build_alfabeto_index
+
+
+
 
 
 
@@ -155,7 +161,7 @@ def data_handler():
         recipes['ingredients_raw'] = recipes['ingredients_raw'].apply(json.loads)
         recipes['cuisine_list'] = recipes['cuisine_list'].str.lower()
         recipes['cuisine_list'] = recipes['cuisine_list'].apply(json.loads)
-        recipes.drop_duplicates(subset=['recipe_title'])
+        recipes = recipes.drop_duplicates(subset=['recipe_title'])
         ingredients = {}
         cuisines = {}
         subcategories = {}
@@ -237,6 +243,8 @@ def data_handler():
         # protocol mais recente
         pickle.dump(bt, f, protocol=pickle.HIGHEST_PROTOCOL)
     
+    trie = Trie()
+    build_alfabeto_index(trie)
 
     
 

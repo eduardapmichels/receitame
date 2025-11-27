@@ -4,9 +4,7 @@ import time
 import pickle
 from pathlib import Path
 
-
-from data_handler import RECIPE_STRUCT
-
+RECIPE_STRUCT = struct.Struct("i120si5500si20s4?i")
 
 class TrieNode:
     def __init__(self):
@@ -47,9 +45,8 @@ insere na TRIE com o offset
 converte a TRIE para dicionário
 Salva em recipes_index.bin"""
 
-def build_alfabeto_index():
-    trie = Trie()
-    bin_path = Path("recipes.bin")
+def build_alfabeto_index(trie: Trie):
+    bin_path = Path("data/recipes.bin")
 
     try:
 
@@ -75,7 +72,7 @@ def build_alfabeto_index():
 
         bin_start = time.time()
 
-        index_path =  Path("data/recipes_index.bin")
+        index_path =  Path("data/trie.bin")
 
         with index_path.open("wb") as f:
             pickle.dump(trie, f)
