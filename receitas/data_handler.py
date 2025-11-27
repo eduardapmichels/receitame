@@ -10,6 +10,9 @@ from pathlib import Path
 
 
 
+
+
+
 total_ingredients = 0 # Initialize recipe counter
 total_recipes = 0 # Initialize recipe counter
 total_cuisines = 0 # Initialize cuisine counter
@@ -155,7 +158,7 @@ def data_handler():
         recipes['ingredients_raw'] = recipes['ingredients_raw'].apply(json.loads)
         recipes['cuisine_list'] = recipes['cuisine_list'].str.lower()
         recipes['cuisine_list'] = recipes['cuisine_list'].apply(json.loads)
-        recipes.drop_duplicates(subset=['recipe_title'])
+        recipes = recipes.drop_duplicates(subset=['recipe_title'])
         ingredients = {}
         cuisines = {}
         subcategories = {}
