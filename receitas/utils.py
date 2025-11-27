@@ -8,60 +8,45 @@ import struct
 
 import math
 
-def load_btree_pickle():
-    p = Path("data/bptree.bin")
-    if not p.exists():
-        return None
-    with open(p, "rb") as f:
-        bt = pickle.load(f)
-    
-    root = bt.get_root()
-    print(root.nodes[:root.n])
-    return bt
-
-
-def load_trie_pickle():
-    p = Path("data/trie.bin")
-    if not p.exists():
-        return None
-    with open(p, "rb") as f:
-        trie = pickle.load(f)
-    return trie
 
 def get_recipes_page_trie(trie, page=1, per_page=200):
-    all_ids = []
-
-    # ---- DFS ORDENADO ----
-    def dfs(node):
-        if node.end:
-            for recipe_id, _pos in node.positions:
-                all_ids.append(recipe_id)
-
-        # IMPORTANTE: garantir ordem alfabética por caractere
-        for char in sorted(node.children.keys()):
-            dfs(node.children[char])
-
-    # faz varredura completa
-    dfs(trie.root)
-
-    # ---- CARREGA TODAS RECEITAS COM TÍTULO ----
     recipes = []
-    for rid in all_ids:
-        title = get_recipe_title(rid)
-        time = get_recipe_time(rid)
-        recipes.append((time, rid, title))
+    count = 0
+    start_index = (page - 1) * per_page
+    end_index = page * per_page
 
-    # ---- ORDENA ALFABETICAMENTE PELO TÍTULO ----
-    recipes.sort(key=lambda x: x[2].lower())
+    # primeiro conta total de receitas
+    def count_dfs(node):
+        cnt = 0
+        if node.end:
+            cnt += len(node.positions)
+        for child in node.children.values():
+            cnt += count_dfs(child)
+        return cnt
 
-    # ---- PAGINA DEPOIS DE ORDENAR ----
-    total_results = len(recipes)
+    total_results = count_dfs(trie.root)
     total_pages = math.ceil(total_results / per_page)
 
-    start = (page - 1) * per_page
-    end = page * per_page
+    # agora pega apenas a página
+    def dfs(node):
+        nonlocal count
+        if node.end:
+            for recipe_id, _pos in node.positions:
+                if start_index <= count < end_index:
+                    title = get_recipe_title(recipe_id)
+                    time = get_recipe_time(recipe_id)
+                    recipes.append((time, recipe_id, title))
+                count += 1
+                if count >= end_index:
+                    return True
+        for char in sorted(node.children.keys()):
+            if dfs(node.children[char]):
+                return True
+        return False
 
-    return total_pages, recipes[start:end], total_results
+    dfs(trie.root)
+
+    return total_pages, recipes, total_results
 
 
 def get_recipes_page_bt(bt, page=1, per_page=200, min_time=None, max_time=None):
