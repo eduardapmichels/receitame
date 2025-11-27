@@ -24,8 +24,6 @@ def csv_process(request):
 
 def list_all(request):
 
-    bt = load_btree_pickle()
-    trie=load_trie_pickle()
 
     # página
     page = int(request.GET.get("page", 1))
@@ -36,6 +34,7 @@ def list_all(request):
     
     # lê valores min e max se checkbox estiver marcado
     if checked:
+        bt = load_btree_pickle()
         min_time = parse_int(request.GET.get("min"))
         max_time = parse_int(request.GET.get("max"))
 
@@ -59,6 +58,7 @@ def list_all(request):
         )
 
     else:
+        trie=load_trie_pickle()
         min_time = None
         max_time = None
         pages_max, recipes, total_r_found =get_recipes_page_trie(

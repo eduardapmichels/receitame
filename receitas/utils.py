@@ -29,25 +29,39 @@ def load_trie_pickle():
     return trie
 
 def get_recipes_page_trie(trie, page=1, per_page=200):
-    all_filtered = []  # evita duplicados
-    def dfs(node):
-        count = 0
+    all_ids = []
 
-        # se o nó for final de palavra, acumular os IDs
+    # ---- DFS ORDENADO ----
+    def dfs(node):
         if node.end:
             for recipe_id, _pos in node.positions:
-                all_filtered.append(recipe_id)
-                count += 1
+                all_ids.append(recipe_id)
 
-        # percorrer recursivamente os filhos
-        for child in node.children.values():
-            count += dfs(child)
+        # IMPORTANTE: garantir ordem alfabética por caractere
+        for char in sorted(node.children.keys()):
+            dfs(node.children[char])
 
-        return count
+    # faz varredura completa
+    dfs(trie.root)
 
-    total_results = dfs(trie.root)
+    # ---- CARREGA TODAS RECEITAS COM TÍTULO ----
+    recipes = []
+    for rid in all_ids:
+        title = get_recipe_title(rid)
+        time = get_recipe_time(rid)
+        recipes.append((time, rid, title))
+
+    # ---- ORDENA ALFABETICAMENTE PELO TÍTULO ----
+    recipes.sort(key=lambda x: x[2].lower())
+
+    # ---- PAGINA DEPOIS DE ORDENAR ----
+    total_results = len(recipes)
     total_pages = math.ceil(total_results / per_page)
-    return total_pages, paginate(all_filtered, page, per_page), total_results
+
+    start = (page - 1) * per_page
+    end = page * per_page
+
+    return total_pages, recipes[start:end], total_results
 
 
 def get_recipes_page_bt(bt, page=1, per_page=200, min_time=None, max_time=None):
