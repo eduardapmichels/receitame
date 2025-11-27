@@ -7,6 +7,12 @@ import time
 from receitas.Btree.BTree import BTree
 import pickle
 from pathlib import Path
+from receitas.alfabeto_index import TrieNode
+from receitas.alfabeto_index import Trie
+from receitas.alfabeto_index import build_alfabeto_index
+
+
+
 
 
 
@@ -240,6 +246,8 @@ def data_handler():
         # protocol mais recente
         pickle.dump(bt, f, protocol=pickle.HIGHEST_PROTOCOL)
     
+    trie = Trie()
+    build_alfabeto_index(trie)
 
     
 
