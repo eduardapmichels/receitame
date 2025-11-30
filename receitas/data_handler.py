@@ -10,12 +10,7 @@ from pathlib import Path
 from receitas.alfabeto_index import TrieNode
 from receitas.alfabeto_index import Trie
 from receitas.alfabeto_index import build_alfabeto_index
-
-
-
-
-
-
+from receitas.invertedIndex.binarysearchtree import BinarySearchTree
 
 
 
@@ -209,34 +204,12 @@ def data_handler():
     tbin = time.time()
     tend = time.time()
     total_elapsed = tend - start_time
-    print(f"\n\n total {total_recipes}")
+    print(f"\n\n total receitas {total_recipes}")
+    print(f"total ingredientes {total_ingredients}")
+    print(f"cuisines {total_cuisines}")
+    print(f"total subcategories {total_subcategories} \n\n")
 
-    bt.print_tree(bt.root)
 
-    def key_to_dict(key: "Key"):
-        return {
-            "time": key.time,
-            "recipes": key.recipes
-        }
-
-    def node_to_dict(node: "Node"):
-        node_dict = {
-            "is_leaf": node.is_leaf,
-            "keys": [key_to_dict(k) for k in node.nodes]
-        }
-        if not node.is_leaf:
-            node_dict["children"] = [node_to_dict(c) for c in node.children]
-        # opcional: adicionar next nas folhas
-        if node.is_leaf and node.next is not None:
-            node_dict["next"] = [k.time for k in node.next.nodes]
-        return node_dict
-
-    # Convertendo a árvore inteira
-    btree_dict = node_to_dict(bt.root)
-
-    # Salvando em JSON legível
-    with open("bplustree.json", "w", encoding="utf-8") as f:
-        json.dump(btree_dict, f, indent=4, ensure_ascii=False)
 
     # dentro do data_handler, depois de construir bt
     pickle_path = Path("data/bptree.bin")
@@ -249,7 +222,36 @@ def data_handler():
     trie = Trie()
     build_alfabeto_index(trie)
 
-    
+    #Arquivos binarios
+    # depois de percorrer o CSV e criar IDs
+    bst_vegan = BinarySearchTree()
+    bst_vegetarian = BinarySearchTree()
+    bst_gluten_free = BinarySearchTree()
+    bst_dairy_free = BinarySearchTree()
+    bst_cuisines = BinarySearchTree()
+    bst_difficulty = BinarySearchTree()
+
+    # preenche as BSTs com os IDs já processados
+    total_recipes = 0
+    for recipe in recipes.itertuples():
+        total_recipes += 1
+        if recipe.is_vegan: bst_vegan.insert_recipe("vegan", total_recipes)
+        if recipe.is_vegetarian: bst_vegetarian.insert_recipe("vegetarian", total_recipes)
+        if recipe.is_gluten_free: bst_gluten_free.insert_recipe("gluten_free", total_recipes)
+        if recipe.is_dairy_free: bst_dairy_free.insert_recipe("dairy_free", total_recipes)
+        for cuisine in recipe.cuisine_list:
+            bst_cuisines.insert_recipe(cuisine, total_recipes)
+        bst_difficulty.insert_recipe(recipe.difficulty, total_recipes)
+
+    # cria os arquivos invertidos
+    bst_vegan.to_inverted_file("vegan")
+    bst_vegetarian.to_inverted_file("vegetarian")
+    bst_gluten_free.to_inverted_file("gluten_free")
+    bst_dairy_free.to_inverted_file("dairy_free")
+    bst_cuisines.to_inverted_file("cuisines")
+    bst_difficulty.to_inverted_file("difficulty")
+
+
 
     return {"total_recipes": total_recipes, "time": total_elapsed, "message": "Success"}
 

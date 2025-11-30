@@ -1,15 +1,13 @@
 from django.shortcuts import render
 from receitas.data_handler import data_handler
 from receitas.utils import *
-
+RECIPE_STRUCT = struct.Struct("i120si5500si20s4?i")
 
 def index(request):
     context = {
 
     }
     return render(request, 'home.html', context)
-# Create your views here.
-
 
 def csv_process(request):
     result = data_handler()  # aqui roda todo o CSV
@@ -20,7 +18,6 @@ def csv_process(request):
         "message": result["message"]
     }
     return render(request, 'home.html', context)
-
 
 def list_all(request):
 
@@ -64,7 +61,7 @@ def list_all(request):
         pages_max, recipes, total_r_found =get_recipes_page_trie(
             trie,
             page=page,
-            per_page=200,
+            per_page=70,
         )
   
 
@@ -90,48 +87,93 @@ def list_all(request):
     return render(request, "list_recipes.html", context)
 
 
+
+def list_categories(request):
+    #para selects
+    difficulties = ["easy", "medium", "hard"]
+    cuisines = load_all_cuisines()
+
+    # --- Parâmetros do GET ---
+    checked_vegan = 'checked_vegan' in request.GET
+    checked_vegetarian = 'checked_vegetarian' in request.GET
+    checked_gluten = 'checked_gluten' in request.GET
+    checked_dairy = 'checked_dairy' in request.GET
+    selected_difficulties = request.GET.getlist('difficulty')
+    selected_cuisines = request.GET.getlist('cuisine')
+    page = int(request.GET.get('page', 1))
+    per_page = 70
+
+    # --- Carregar cache dos arquivos invertidos ---
+    tags_index_cache = build_tags_index_cache("data")
+
+
+
+    # --- Construir lista de tags para intersect ---
+    tags = []
+
+    if checked_vegan:
+        tags.append("vegan")
+    if checked_vegetarian:
+        tags.append("vegetarian")
+    if checked_gluten:
+        tags.append("gluten_free")
+    if checked_dairy:
+        tags.append("dairy_free")
+    
+    # Adiciona dificuldades, cuisines e categorias como tags também
+    tags += selected_difficulties
+    tags += selected_cuisines
+
+
+    # --- Intersect dos IDs ---
+    if tags:
+        filtered_ids = intersect_tags(tags, tags_index_cache)
+    else:
+        # Se nenhum filtro, pega todas as receitas
+
+        
+        recipes_bin_path = Path("data/recipes.bin")
+        size = recipes_bin_path.stat().st_size
+        total_recipes = size // RECIPE_STRUCT.size
+        filtered_ids = set(range(1, total_recipes + 1))
+
+    # --- Paginar resultados ---
+    recipes_page = paginate(list(filtered_ids), page, per_page)
+    total_results = len(filtered_ids)
+    total_pages = (total_results + per_page - 1) // per_page
+
+    query_params = request.GET.copy()
+
+    # força remover page para reconstruir nos botões
+    if "page" in query_params:
+        del query_params["page"]
+
+    # --- Montar contexto ---
+    context = {
+        "difficulties": difficulties,
+        "cuisines": cuisines,
+        "recipes": recipes_page,
+        "total_results": total_results,
+        "page": page,
+        "count": total_pages,
+        "checked_vegan": checked_vegan,
+        "checked_vegetarian": checked_vegetarian,
+        "checked_gluten": checked_gluten,
+        "checked_dairy": checked_dairy,
+        "selected_difficulties": selected_difficulties,
+        "selected_cuisines": selected_cuisines,
+        "error": None,
+        "query_string": query_params.urlencode(),
+    }
+
+    return render(request, 'categories.html', context)
+
+
+def add_recipe(request):
+    context = {
+    }
+    return render(request, 'home.html', context)
+
 def read_recipe(request):
     return
 
-def list_vegan(request):
-    context = {}
-    return render(request, 'home.html', context)
-def list_vegetarian(request):
-    context = {}
-    return render(request, 'home.html', context)
-def list_gluten_free(request):
-    context = {
-
-    }
-    return render(request, 'home.html', context)
-def list_dairy_free(request):
-    context = {
-    }
-    return render(request, 'home.html', context)
-
-def list_cuisines(request):
-    context = {
-
-    }
-    return render(request, 'home.html', context)
-
-def list_easy(request):
-    context = {
-
-    }
-    return render(request, 'home.html', context)
-def list_medium(request):
-    context = {
-
-    }
-    return render(request, 'home.html', context)
-def list_difficult(request):
-    context = {
-
-    }
-    return render(request, 'home.html', context)
-
-def list_categories(request):
-    context = {
-    }
-    return render(request, 'home.html', context)

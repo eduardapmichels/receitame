@@ -1,6 +1,7 @@
 {% extends 'menu.html' %}
 {% load static %}
 
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'list_recipes.css' %}">
 {% endblock %}
@@ -9,118 +10,44 @@
 
     {% if not error %}
    
-    <div id="container_receitas">
-        <h1>RECIPES</h1>
-        <form method="get">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="check" id="check"
-                    onchange="this.form.submit()" 
-                    {% if checked %}checked{% endif %}>
-                <label class="form-check-label" for="check">
-                    Sort by time
-                </label>
-            </div>
-
-            {% if checked %}
-                <div class="range d-flex gap-2 align-items-center">
-                    <div class="input-group input-group-sm mb-3 flex-grow-1">
-                        <span class="input-group-text">Min</span>
-                        <input type="number" name="min" class="form-control" value="{{ min|default:'' }}">
-                    </div>
-
-                    <div class="input-group input-group-sm mb-3 flex-grow-1">
-                        <span class="input-group-text">Max</span>
-                        <input type="number" name="max" class="form-control" value="{{ max|default:'' }}">
-                    </div>
-
-                    <button class="btn btn-primary">Apply filter</button>
+        <div id="container_receitas">
+            <h1>RECIPES</h1>
+            <form method="get">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="check" id="check"
+                        onchange="this.form.submit()" 
+                        {% if checked %}checked{% endif %}>
+                    <label class="form-check-label" for="check">
+                        Sort by time
+                    </label>
                 </div>
-            {% else %}
-                <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1"><button style = "border-color: transparent;background-color: transparent;">Pesquisar</button></span>
-                    <input type="text" class="form-control" placeholder="Digite o título que procuras..." aria-describedby="basic-addon1">
-                </div>
-            
-            {% endif %}
-        </form>
 
-        <p><strong>{{ total_results }}</strong> receitas encontradas</p>
+                {% if checked %}
+                    <div class="range d-flex gap-2 align-items-center">
+                        <div class="input-group input-group-sm mb-3 flex-grow-1">
+                            <span class="input-group-text">Min</span>
+                            <input type="number" name="min" class="form-control" value="{{ min|default:'' }}">
+                        </div>
 
+                        <div class="input-group input-group-sm mb-3 flex-grow-1">
+                            <span class="input-group-text">Max</span>
+                            <input type="number" name="max" class="form-control" value="{{ max|default:'' }}">
+                        </div>
 
-
-     
-
-
-       <table class="table">
-        <thead>
-            <tr>
-            <th>Título</th>
-            <th>Tempo</th>
-            <th>ID da Receita</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for time, rid, rtitle in recipes %}
-                <tr>
-                    
-                    <td><a href="">{{ rtitle }}</a></td>
-                    <td>{{ time }}</td>
-                    <td>{{ rid }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-        </table>
-
-
+                        <button class="btn btn-primary">Apply filter</button>
+                    </div>
+                {% else %}
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><button style = "border-color: transparent;background-color: transparent;">Pesquisar</button></span>
+                        <input type="text" class="form-control" placeholder="Digite o título que procuras..." aria-describedby="basic-addon1">
+                    </div>
                 
+                {% endif %}
+            </form>
 
-        </table>
+            {% include 'recipe.html' %}
 
-        <nav aria-label="Page navigation example">
-        <ul class="pagination">
-
-            <!-- Botão anterior -->
-            <li class="page-item {% if page == 1 %}disabled{% endif %}">
-                <a class="page-link"
-                href="?page={{ page|add:-1 }}&{{ query_string }}">
-                    &laquo;
-                </a>
-            </li>
-
-            <!-- Página page-2 -->
-            {% if page|add:-2 >= 1 %}
-                <li class="page-item"><a class="page-link" href="?page={{ page|add:-2 }}&{{ query_string }}">{{ page|add:-2 }}</a></li>
-            {% endif %}
-
-            <!-- Página page-1 -->
-            {% if page|add:-1 >= 1 %}
-                <li class="page-item"><a class="page-link" href="?page={{ page|add:-1 }}&{{ query_string }}">{{ page|add:-1 }}</a></li>
-            {% endif %}
-
-            <!-- Página atual -->
-            <li class="page-item active"><a class="page-link" href="?page={{ page }}&{{ query_string }}">{{ page }}</a></li>
-
-            <!-- Página page+1 -->
-            {% if page|add:1 <= count %}
-                <li class="page-item"><a class="page-link" href="?page={{ page|add:1 }}&{{ query_string }}">{{ page|add:1 }}</a></li>
-            {% endif %}
-
-            <!-- Página page+2 -->
-            {% if page|add:2 <= count %}
-                <li class="page-item"><a class="page-link" href="?page={{ page|add:2 }}&{{ query_string }}">{{ page|add:2 }}</a></li>
-            {% endif %}
-
-            <!-- Botão próximo -->
-            <li class="page-item {% if page >= count %}disabled{% endif %}">
-                <a class="page-link" href="?page={{ page|add:1 }}&{{ query_string }}" aria-label="Next">
-                    &raquo;
-                </a>
-            </li>
-
-        </ul>
-        </nav>
-
-    </div>
+        </div>
 
 
     {% else %}

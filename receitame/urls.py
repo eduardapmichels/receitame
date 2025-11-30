@@ -23,14 +23,7 @@ urlpatterns = [
     path('', views.index, name = "home"),
     path('process_csv/', views.csv_process, name="csvprocess"),
     path('all_recipes/', views.list_all, name="list_all"),
-    #path('all_recipes_time/', views.list_time, name="list_time"),
-    path('vegan/', views.list_vegan, name="list_vegan"),
-    path('vegetarian/', views.list_vegetarian, name="list_vegetarian"),
-    path('dairy_free/', views.list_dairy_free, name="list_dairy_free"),
-    path('gluten_free/', views.list_gluten_free, name="list_gluten_free"),
-    path('easy/', views.list_easy, name="list_easy"),
-    path('medium/', views.list_medium, name="list_medium"),
-    path('difficult/', views.list_difficult, name="list_difficult"),
-    path('cuisines/', views.list_cuisines, name="list_cuisines"),
+    path('categories/', views.list_categories, name="list_categories"),
+
 ]
 

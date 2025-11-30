@@ -1,0 +1,88 @@
+{% extends 'menu.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'categories.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div id="container_receitas">
+        <h1>CATEGORIES</h1>
+        <form method="get">
+            <div id="categorias">
+                <div id="checkbutton">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="checked_vegan"
+                            onchange="this.form.submit()" 
+                            {% if checked_vegan %}checked{% endif %}>
+                        <label class="form-check-label" for="checked_vegan">Vegan</label>
+                    </div><div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="checked_vegetarian"
+                            onchange="this.form.submit()" 
+                            {% if checked_vegetarian %}checked{% endif %}>
+                        <label class="form-check-label" for="checked_vegetarian">Vegetarian</label>
+                    </div><div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="checked_gluten"
+                            onchange="this.form.submit()" 
+                            {% if checked_gluten %}checked{% endif %}>
+                        <label class="form-check-label" for="checked_gluten">Gluten free</label>
+                    </div><div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="checked_dairy"
+                            onchange="this.form.submit()" 
+                            {% if checked_dairy %}checked{% endif %}>
+                        <label class="form-check-label" for="checked_dairy">Dairy free</label>
+                    </div>
+                </div>
+
+                <div id="multipleOptions" class="d-flex flex-column gap-1">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            Difficulty
+                        </button>
+                        <ul class="dropdown-menu p-3" style="max-height: 200px; overflow-y: auto;">
+                            {% for diff in difficulties %}
+                            <li>
+                            <label class="dropdown-item">
+                                <input onclick="this.form.submit()" type="radio" name="difficulty" value="{{ diff }}"
+                                    {% if diff in selected_difficulties %}checked{% endif %}>
+                                {{ diff }}
+                            </label>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        Cuisine   
+                    </button>
+                    <ul class="dropdown-menu p-3" style="max-height: 200px; overflow-y: auto;">
+                        {% for cuisine in cuisines %}
+                        <li>
+                        <label class="dropdown-item">
+                           <input onclick="this.form.submit()" type="checkbox" name="cuisine" value="{{ cuisine }}"
+                                {% if cuisine in selected_cuisines %}checked{% endif %}>
+                            {{ cuisine }}
+                        </label>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    </div>
+
+                    
+                </div>
+            </div>
+        </form>
+        <div id="limpar_filtro">
+            <button type="submit" class="btn btn-outline-danger mt-2"><a id="link_limpa"  href="{% url 'list_categories' %}">Limpar filtros</a>
+            
+        </button>
+   
+        </div>
+        <!-- Inclui a tabela de receitas -->
+        {% include 'recipe.html' %}
+
+    </div>
+
+
+{% endblock %}
