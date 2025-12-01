@@ -23,7 +23,7 @@ urlpatterns = [
     path('', views.index, name = "home"),
     path('process_csv/', views.csv_process, name="csvprocess"),
     path('all_recipes/', views.list_all, name="list_all"),
+    path('recipe/<int:recipe_id>/', views.read_recipe, name="read_recipe"),
     path('categories/', views.list_categories, name="list_categories"),
-
 ]
 

@@ -1,88 +1,28 @@
+{% extends 'menu.html' %}
 {% load static %}
-</br></br>
-<p><strong>{{ total_results }}</strong> receitas encontradas
-{% if selected_categories %}
-</br>Category:
-    {% for i in selected_categories %}
-     "{{i}}" 
-    {% endfor %}
-{% endif %}
 
-{% if selected_difficulties %}
-</br>Difficulty:
-    {% for i in selected_difficulties %}
-     "{{i}}" 
-    {% endfor %}
-{% endif %}
+{% block content %}
+<div class="container mt-4">
 
-{% if selected_cuisines %}
-</br>Cuisine:
-    {% for i in selected_cuisines %}
-     "{{i}}" 
-    {% endfor %}
-{% endif %}
-</p>
+    <a href="{% url 'list_all' %}" class="btn btn-primary mb-3 px-3">← Voltar</a>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Título</th>
-            <th>Tempo</th>
-            <th>ID da Receita</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for time, rid, rtitle in recipes %}
-            <tr>
-                <td><a href="">{{ rtitle }}</a></td>
-                <td>{{ time }}</td>
-                <td>{{ rid }}</td>
-            </tr>
+    <h1>{{ title }}</h1>
+    <p><strong>Tempo de preparo:</strong> {{ time }} minutos</p>
+
+    <h3>Ingredientes</h3>
+    <ul>
+        {% for name, amount in ingredients %}
+            <li>{{ amount }} - {{ name }}</li>
+        {% empty %}
+            <li>Nenhum ingrediente encontrado.</li>
         {% endfor %}
-    </tbody>
-</table>
+    </ul>
 
-<!-- Navegação -->
-    <nav>
-        <ul class="pagination">
+    <h3>Modo de preparo</h3>
+    <p style="white-space: pre-wrap;">
+        {{ instructions }}
+    </p>
 
-            <!-- Botão anterior -->
-            <li class="page-item {% if page == 1 %}disabled{% endif %}">
-                <a class="page-link"
-                href="?page={{ page|add:-1 }}&{{ query_string }}">
-                    &laquo;
-                </a>
-            </li>
+</div>
+{% endblock %}
 
-            <!-- Página page-2 -->
-            {% if page|add:-2 >= 1 %}
-                <li class="page-item"><a class="page-link" href="?page={{ page|add:-2 }}&{{ query_string }}">{{ page|add:-2 }}</a></li>
-            {% endif %}
-
-            <!-- Página page-1 -->
-            {% if page|add:-1 >= 1 %}
-                <li class="page-item"><a class="page-link" href="?page={{ page|add:-1 }}&{{ query_string }}">{{ page|add:-1 }}</a></li>
-            {% endif %}
-
-            <!-- Página atual -->
-            <li class="page-item active"><a class="page-link" href="?page={{ page }}&{{ query_string }}">{{ page }}</a></li>
-
-            <!-- Página page+1 -->
-            {% if page|add:1 <= count %}
-                <li class="page-item"><a class="page-link" href="?page={{ page|add:1 }}&{{ query_string }}">{{ page|add:1 }}</a></li>
-            {% endif %}
-
-            <!-- Página page+2 -->
-            {% if page|add:2 <= count %}
-                <li class="page-item"><a class="page-link" href="?page={{ page|add:2 }}&{{ query_string }}">{{ page|add:2 }}</a></li>
-            {% endif %}
-
-            <!-- Botão próximo -->
-            <li class="page-item {% if page >= count %}disabled{% endif %}">
-                <a class="page-link" href="?page={{ page|add:1 }}&{{ query_string }}" aria-label="Next">
-                    &raquo;
-                </a>
-            </li>
-
-        </ul>
-    </nav>

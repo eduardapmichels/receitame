@@ -1,7 +1,10 @@
 from django.shortcuts import render
 from receitas.data_handler import data_handler
-from receitas.utils import *
-RECIPE_STRUCT = struct.Struct("i120si5500si20s4?i")
+from .utilitario.globals import BT, TRIE
+from .utils import *
+from receitas.data_handler import get_recipe_instructions, get_recipe_ingredients
+
+
 
 def index(request):
     context = {
@@ -21,7 +24,6 @@ def csv_process(request):
 
 def list_all(request):
 
-
     # página
     page = int(request.GET.get("page", 1))
 
@@ -31,7 +33,6 @@ def list_all(request):
     
     # lê valores min e max se checkbox estiver marcado
     if checked:
-        bt = load_btree_pickle()
         min_time = parse_int(request.GET.get("min"))
         max_time = parse_int(request.GET.get("max"))
 
@@ -47,7 +48,7 @@ def list_all(request):
             if min_time > max_time:
                 min_time, max_time = max_time, min_time
         pages_max, recipes, total_r_found =get_recipes_page_bt(
-            bt,
+            BT,
             page=page,
             per_page=200,
             min_time=min_time,
@@ -55,17 +56,14 @@ def list_all(request):
         )
 
     else:
-        trie=load_trie_pickle()
         min_time = None
         max_time = None
         pages_max, recipes, total_r_found =get_recipes_page_trie(
-            trie,
+            TRIE,
             page=page,
             per_page=70,
         )
   
-
-
     query_params = request.GET.copy()
 
     # força remover page para reconstruir nos botões
@@ -85,6 +83,23 @@ def list_all(request):
      
 
     return render(request, "list_recipes.html", context)
+
+def read_recipe(request, recipe_id):
+
+    title = get_recipe_title(recipe_id)
+    time = get_recipe_time(recipe_id)
+    instructions = get_recipe_instructions(recipe_id)
+    ingredients = get_recipe_ingredients(recipe_id)
+
+    context = {
+        "id": recipe_id,
+        "title": title,
+        "time": time,
+        "instructions": instructions,
+        "ingredients": ingredients,
+    }
+
+    return render(request, "recipe.html", context)
 
 
 
@@ -173,7 +188,3 @@ def add_recipe(request):
     context = {
     }
     return render(request, 'home.html', context)
-
-def read_recipe(request):
-    return
-
