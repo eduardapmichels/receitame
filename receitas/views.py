@@ -2,6 +2,9 @@ from django.shortcuts import render
 from receitas.data_handler import data_handler
 from .utilitario.globals import BT, TRIE
 from .utils import *
+from receitas.data_handler import get_recipe_instructions, get_recipe_ingredients
+
+
 
 def index(request):
     context = {
@@ -64,8 +67,6 @@ def list_all(request):
             per_page=200,
         )
   
-
-
     query_params = request.GET.copy()
 
     # força remover page para reconstruir nos botões
@@ -87,8 +88,24 @@ def list_all(request):
     return render(request, "list_recipes.html", context)
 
 
-def read_recipe(request):
-    return
+def read_recipe(request, recipe_id):
+
+    title = get_recipe_title(recipe_id)
+    time = get_recipe_time(recipe_id)
+    instructions = get_recipe_instructions(recipe_id)
+    ingredients = get_recipe_ingredients(recipe_id)
+
+    context = {
+        "id": recipe_id,
+        "title": title,
+        "time": time,
+        "instructions": instructions,
+        "ingredients": ingredients,
+    }
+
+    return render(request, "recipe.html", context)
+
+
 
 def list_vegan(request):
     context = {}

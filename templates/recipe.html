@@ -1,0 +1,27 @@
+{% extends 'menu.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <a href="{% url 'list_all' %}" class="btn btn-primary mb-3 px-3">← Voltar</a>
+
+    <h1>{{ title }}</h1>
+    <p><strong>Tempo de preparo:</strong> {{ time }} minutos</p>
+
+    <h3>Ingredientes</h3>
+    <ul>
+        {% for ing in ingredients %}
+            <li>{{ ing }}</li>
+        {% empty %}
+            <li>Nenhum ingrediente encontrado.</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Modo de preparo</h3>
+    <p style="white-space: pre-wrap;">
+        {{ instructions }}
+    </p>
+
+</div>
+{% endblock %}

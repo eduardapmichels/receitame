@@ -23,6 +23,52 @@ total_subcategories = 0 # Initialize subcategory counter
 media_ingredients = 0 #Average ingredients per recipe
 recipe_ingredients = 0
 
+
+RECIPE_STRUCT = struct.Struct("i120si5500si20s4?i")
+ING_STRUCT = struct.Struct("i130s")
+RECIPE_ING_STRUCT = struct.Struct("iii70s")
+
+def get_recipe_instructions(recipe_id, file_path="data/recipes.bin"):
+    with open(file_path, "rb") as f:
+        offset = (recipe_id - 1) * RECIPE_STRUCT.size
+        f.seek(offset)
+        data = f.read(RECIPE_STRUCT.size)
+        if not data:
+            return None
+        unpacked = RECIPE_STRUCT.unpack(data)
+        return unpacked[3].decode("utf-8").strip("\x00")
+
+
+def get_ingredient_name(ingredient_id, file="data/ingredients.bin"):
+    with open(file, "rb") as f:
+        offset = (ingredient_id - 1) * ING_STRUCT.size
+        f.seek(offset)
+        data = f.read(ING_STRUCT.size)
+        if not data:
+            return None
+        iid, name = ING_STRUCT.unpack(data)
+        return name.decode("utf-8").strip("\x00")
+
+
+def get_recipe_ingredients(recipe_id, file="data/recipe_ingredients.bin"):
+    ingredients_ids = []
+
+    with open(file, "rb") as f:
+        while True:
+            data = f.read(RECIPE_ING_STRUCT.size)
+            if not data:
+                break
+
+            rel_id, rid, iid, measurement = RECIPE_ING_STRUCT.unpack(data)
+
+            if rid == recipe_id:
+                ingredients_ids.append(iid)
+
+    return [get_ingredient_name(x) for x in ingredients_ids]
+
+
+
+
 def data_handler():
     start_time = time.time()
     global total_ingredients
@@ -71,6 +117,7 @@ def data_handler():
 
     media_ingredients = 0 #Average ingredients per recipe
     total_time = 0 #Total time for all recipes
+
 
     # Functions to handle ingredients and their relations
     def add_ingredients(ingredients_list, ingredients, ingredients_measurement, recipe_id):           
@@ -130,7 +177,7 @@ def data_handler():
         ))
 
         return 0
-
+    
     # Function to handle subcategories
     def add_subcategories(recipe_id, subcategory):
         global total_subcategories
@@ -146,6 +193,7 @@ def data_handler():
             subcategory_id = subcategories[subcategory]
 
         return subcategory_id
+
 
 
     t0=time.time()

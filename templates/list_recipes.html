@@ -63,7 +63,9 @@
             {% for time, rid, rtitle in recipes %}
                 <tr>
                     
-                    <td><a href="">{{ rtitle }}</a></td>
+                    <td>
+                        <a href="/recipe/{{ rid }}/">{{ rtitle }}</a>
+                    </td>
                     <td>{{ time }}</td>
                     <td>{{ rid }}</td>
                 </tr>

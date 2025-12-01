@@ -24,6 +24,7 @@ urlpatterns = [
     path('process_csv/', views.csv_process, name="csvprocess"),
     path('all_recipes/', views.list_all, name="list_all"),
     #path('all_recipes_time/', views.list_time, name="list_time"),
+    path('recipe/<int:recipe_id>/', views.read_recipe, name="read_recipe"),
     path('vegan/', views.list_vegan, name="list_vegan"),
     path('vegetarian/', views.list_vegetarian, name="list_vegetarian"),
     path('dairy_free/', views.list_dairy_free, name="list_dairy_free"),
