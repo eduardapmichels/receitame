@@ -11,8 +11,8 @@
 
     <h3>Ingredientes</h3>
     <ul>
-        {% for ing in ingredients %}
-            <li>{{ ing }}</li>
+        {% for name, amount in ingredients %}
+            <li>{{ amount }} - {{ name }}</li>
         {% empty %}
             <li>Nenhum ingrediente encontrado.</li>
         {% endfor %}

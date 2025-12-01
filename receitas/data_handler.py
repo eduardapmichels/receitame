@@ -51,7 +51,7 @@ def get_ingredient_name(ingredient_id, file="data/ingredients.bin"):
 
 
 def get_recipe_ingredients(recipe_id, file="data/recipe_ingredients.bin"):
-    ingredients_ids = []
+    ingredients = []
 
     with open(file, "rb") as f:
         while True:
@@ -59,12 +59,14 @@ def get_recipe_ingredients(recipe_id, file="data/recipe_ingredients.bin"):
             if not data:
                 break
 
-            rel_id, rid, iid, measurement = RECIPE_ING_STRUCT.unpack(data)
+            _id, rid, ing_id, measurement = RECIPE_ING_STRUCT.unpack(data)
 
             if rid == recipe_id:
-                ingredients_ids.append(iid)
+                # Decodifica o measurement e remove padding/zeros
+                measurement_str = measurement.decode('utf-8').strip('\x00').strip()
+                ingredients.append((get_ingredient_name(ing_id), measurement_str))
 
-    return [get_ingredient_name(x) for x in ingredients_ids]
+    return ingredients
 
 
 
