@@ -4,7 +4,9 @@
 {% block content %}
 <div class="container mt-4">
 
-    <a href="{% url 'list_all' %}" class="btn btn-primary mb-3 px-3">← Voltar</a>
+   <button type="button" onclick="history.back()" class="btn btn-primary mb-3 px-3">
+        Voltar
+    </button>
 
     <h1>{{ title }}</h1>
     <p><strong>Tempo de preparo:</strong> {{ time }} minutos</p>
