@@ -3,7 +3,7 @@ from receitas.data_handler import data_handler
 from .utilitario.globals import BT, TRIE
 from .utils import *
 from receitas.data_handler import get_recipe_instructions, get_recipe_ingredients
-
+RECIPE_STRUCT = struct.Struct("i120si5500si20s4?i")
 
 
 def index(request):
@@ -104,6 +104,7 @@ def read_recipe(request, recipe_id):
 
 
 def list_categories(request):
+
     #para selects
     difficulties = ["easy", "medium", "hard"]
     cuisines = load_all_cuisines()
