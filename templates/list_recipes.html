@@ -37,9 +37,26 @@
                         <button class="btn btn-primary">Apply filter</button>
                     </div>
                 {% else %}
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1"><button style = "border-color: transparent;background-color: transparent;">Pesquisar</button></span>
-                        <input type="text" class="form-control" placeholder="Digite o título que procuras..." aria-describedby="basic-addon1">
+                    <div class="input-group mb-3" style="position: relative;">
+                        <input type="text"
+                            id="searchBar"
+                            class="form-control"
+                            placeholder="Digite o título..."
+                            autocomplete="off">
+
+                        <div id="suggestions" 
+                            style="
+                                position:absolute;
+                                top: 100%;
+                                left:0;
+                                right:0;
+                                background:white;
+                                border:1px solid #ccc;
+                                z-index:10;
+                                max-height:300px;
+                                overflow-y:auto;
+                                display:none;">
+                        </div>
                     </div>
                 
                 {% endif %}
@@ -48,7 +65,49 @@
             {% include 'recipes.html' %}
 
         </div>
+                <script>
+                const bar = document.getElementById("searchBar");
+                const box = document.getElementById("suggestions");
 
+                bar.addEventListener("input", async function() {
+                    const q = bar.value.trim();
+
+                    if (q.length === 0) {
+                        box.style.display = "none";
+                        return;
+                    }
+
+                    const res = await fetch(`/ajax/search/?q=` + encodeURIComponent(q));
+                    const data = await res.json();
+
+                    if (data.results.length === 0) {
+                        box.innerHTML = `<p style="padding:6px;">Nenhum resultado...</p>`;
+                        box.style.display = "block";
+                        return;
+                    }
+                    
+                    box.innerHTML = "";
+                    data.results.forEach(r => {
+                        const item = document.createElement("div");
+                        item.style.padding = "6px";
+                        item.style.cursor = "pointer";
+                        item.innerText = r.title;
+                        item.onclick = () => {
+                            window.location.href = "/recipe/" + r.id + "/";
+                        };
+                        box.appendChild(item);
+                    });
+
+                    box.style.display = "block";
+                });
+
+                // Ocultar ao clicar fora
+                document.addEventListener("click", (e) => {
+                    if (!bar.contains(e.target) && !box.contains(e.target)) {
+                        box.style.display = "none";
+                    }
+                });
+                </script>             
 
     {% else %}
         <div class="empty-center">

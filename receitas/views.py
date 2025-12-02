@@ -3,8 +3,50 @@ from receitas.data_handler import data_handler
 from .utilitario.globals import BT, TRIE
 from .utils import *
 from receitas.data_handler import get_recipe_instructions, get_recipe_ingredients
+from django.http import JsonResponse
 
 RECIPE_STRUCT = struct.Struct("i120si5500si20s4?i")
+
+
+from django.http import JsonResponse
+
+def search_recipes(request):
+    q = request.GET.get("q", "").strip().lower()
+    if not q:
+        return JsonResponse({"results": []})
+
+    # Navega na trie
+    node = TRIE.root
+    for char in q:
+        if char not in node.children:
+            return JsonResponse({"results": []})
+        node = node.children[char]
+
+    # Coleta resultados
+    found = []
+
+    def dfs(n):
+        if n.end:
+            for recipe_id, offset in n.positions:
+                found.append((recipe_id, offset))
+        for c, child in n.children.items():
+            dfs(child)
+
+    dfs(node)
+
+    # Ler títulos verdadeiros do arquivo
+    results = []
+    with open("data/recipes.bin", "rb") as f:
+        for recipe_id, offset in found[:20]:
+            f.seek(offset)
+            data = f.read(RECIPE_STRUCT.size)
+            unpacked = RECIPE_STRUCT.unpack(data)
+            title = unpacked[1].decode("utf-8").replace("\x00", "").strip()
+            results.append({"id": recipe_id, "title": title})
+
+    return JsonResponse({"results": results})
+
+
 
 
 
