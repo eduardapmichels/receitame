@@ -12,7 +12,7 @@
    
         <div id="container_receitas">
             <h1>RECIPES</h1>
-            <form method="get">
+            <form method="get" id="recipeForm">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" name="check" id="check"
                         onchange="this.form.submit()" 
@@ -41,7 +41,7 @@
                         <input type="text"
                             id="searchBar"
                             class="form-control"
-                            placeholder="Digite o título..."
+                            placeholder="Digite o que procuras..."
                             autocomplete="off">
 
                         <div id="suggestions" 
@@ -66,48 +66,73 @@
 
         </div>
                 <script>
-                const bar = document.getElementById("searchBar");
-                const box = document.getElementById("suggestions");
+                document.addEventListener("DOMContentLoaded", function() {
 
-                bar.addEventListener("input", async function() {
-                    const q = bar.value.trim();
+                    const bar = document.getElementById("searchBar");
+                    const box = document.getElementById("suggestions");
+                    let currentResults = [];
 
-                    if (q.length === 0) {
-                        box.style.display = "none";
-                        return;
-                    }
-
-                    const res = await fetch(`/ajax/search/?q=` + encodeURIComponent(q));
-                    const data = await res.json();
-
-                    if (data.results.length === 0) {
-                        box.innerHTML = `<p style="padding:6px;">Nenhum resultado...</p>`;
-                        box.style.display = "block";
-                        return;
-                    }
-                    
-                    box.innerHTML = "";
-                    data.results.forEach(r => {
-                        const item = document.createElement("div");
-                        item.style.padding = "6px";
-                        item.style.cursor = "pointer";
-                        item.innerText = r.title;
-                        item.onclick = () => {
-                            window.location.href = "/recipe/" + r.id + "/";
-                        };
-                        box.appendChild(item);
+                    // Bloquear Enter no form, exceto na searchBar
+                    const form = document.querySelector("form");
+                    form.addEventListener("keydown", function(e) {
+                        if (e.key === "Enter" && e.target.id !== "searchBar") {
+                            e.preventDefault();
+                        }
                     });
 
-                    box.style.display = "block";
-                });
+                    bar.addEventListener("input", async function() {
+                        const q = bar.value.trim();
 
-                // Ocultar ao clicar fora
-                document.addEventListener("click", (e) => {
-                    if (!bar.contains(e.target) && !box.contains(e.target)) {
-                        box.style.display = "none";
-                    }
+                        if (q.length === 0) {
+                            box.style.display = "none";
+                            currentResults = [];
+                            return;
+                        }
+
+                        const res = await fetch(`/ajax/search/?q=` + encodeURIComponent(q));
+                        const data = await res.json();
+
+                        currentResults = data.results;
+
+                        if (data.results.length === 0) {
+                            box.innerHTML = `<p style="padding:6px;">Nenhum resultado...</p>`;
+                            box.style.display = "block";
+                            return;
+                        }
+
+                        box.innerHTML = "";
+                        data.results.forEach(r => {
+                            const item = document.createElement("div");
+                            item.style.padding = "6px";
+                            item.style.cursor = "pointer";
+                            item.innerText = r.title;
+                            item.onclick = () => window.location.href = "/recipe/" + r.id + "/";
+                            box.appendChild(item);
+                        });
+
+                        box.style.display = "block";
+                    });
+
+                    // ENTER abre a primeira receita
+                    bar.addEventListener("keydown", function(e) {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (currentResults.length > 0) {
+                                const first = currentResults[0];
+                                window.location.href = "/recipe/" + first.id + "/";
+                            }
+                        }
+                    });
+
+                    // Fechar sugestões ao clicar fora
+                    document.addEventListener("click", (e) => {
+                        if (!bar.contains(e.target) && !box.contains(e.target)) {
+                            box.style.display = "none";
+                        }
+                    });
+
                 });
-                </script>             
+                </script>        
 
     {% else %}
         <div class="empty-center">
