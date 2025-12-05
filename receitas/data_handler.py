@@ -251,6 +251,9 @@ def data_handler():
                 row.is_gluten_free,
                 id_relacao_ingrediente          #id da 1° relação receita-ingrediente
             ))
+
+
+    
     tbin = time.time()
     tend = time.time()
     total_elapsed = tend - start_time
@@ -306,5 +309,75 @@ def data_handler():
     return {"total_recipes": total_recipes, "time": total_elapsed, "message": "Success"}
 
 
+def next_id():
+    path = Path("data/recipes.bin")
+    if not path.exists():
+        return 1
+    return path.stat().st_size // RECIPE_STRUCT.size + 1
 
+def append_recipe(title, instructions, time_min, difficulty, ingredients):
+    rid = next_id()
+
+    # Se não tiver ingredientes, first_rel = 0 (sem relação)
+    if not ingredients:
+        first_rel = 0
+    else:
+        first_rel = append_ingredients(rid, ingredients)
+
+    with open("data/recipes.bin", "ab") as f:
+        f.write(RECIPE_STRUCT.pack(
+            rid,
+            title.encode(),
+            1,  # subcat (placeholder)
+            instructions.encode(),
+            time_min,
+            difficulty.encode(),
+            0, 0, 0, 0,
+            first_rel
+        ))
+
+    update_indexes(rid, time_min)
+    return rid
+
+
+def append_ingredients(rid, ingredients):
+    # retorna o ponteiro (offset) para o primeiro ingrediente
+    first_rel = 0
+    last_offset = 0
+
+    with open("data/rel.bin", "ab+") as f:
+        for ing in ingredients:
+            f.seek(0, 2)  # ir para o final
+            current_offset = f.tell()
+
+            # gravar relação R: (rid, ingrediente, next)
+            f.write(REL_STRUCT.pack(
+                rid,
+                ing.encode(),
+                0  # next pointer (zerado por enquanto)
+            ))
+
+            if first_rel == 0:
+                first_rel = current_offset
+            else:
+                # ajustar o "next" do anterior
+                f.seek(last_offset + REL_NEXT_OFFSET)
+                f.write(int.to_bytes(current_offset, REL_NEXT_SIZE))
+
+            last_offset = current_offset
+
+    return first_rel
+
+
+def update_indexes(recipe_id, time_min):
+    # TRIE
+    trie = Trie()
+    build_alfabeto_index(trie)
+
+    # B+Tree
+    with open("data/bptree.bin", "rb") as f:
+        bt = pickle.load(f)
+    bt.insert_key(time_min, recipe_id)
+    with open("data/bptree.bin", "wb") as f:
+        pickle.dump(bt, f)
    

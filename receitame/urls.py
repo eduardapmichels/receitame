@@ -19,10 +19,12 @@ from django.urls import path
 from receitas import views
 from django.urls import path
 from receitas.views import search_recipes
+from receitas.views import add_recipe
 
 
 urlpatterns = [
     path("ajax/search/", search_recipes, name="ajax_search"),
+    path("add_recipe/", views.add_recipe, name="add_recipe"),
     path('', views.index, name = "home"),
     path('process_csv/', views.csv_process, name="csvprocess"),
     path('all_recipes/', views.list_all, name="list_all"),

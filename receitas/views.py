@@ -1,9 +1,11 @@
 from django.shortcuts import render
 from receitas.data_handler import data_handler
-from .utilitario.globals import BT, TRIE
+from receitas.utilitario.globals import BT, TRIE
 from .utils import *
 from receitas.data_handler import get_recipe_instructions, get_recipe_ingredients
 from django.http import JsonResponse
+from receitas.utilitario.add_new_recipe import add_new_recipe
+from django.shortcuts import render, redirect
 
 RECIPE_STRUCT = struct.Struct("i120si5500si20s4?i")
 
@@ -46,7 +48,19 @@ def search_recipes(request):
 
     return JsonResponse({"results": results})
 
+def add_recipe(request):
+    if request.method == "POST":
+        ingredients = request.POST.get("ingredients").split(",")
+        rid = add_new_recipe(
+            request.POST.get("title"),
+            request.POST.get("instructions"),
+            int(request.POST.get("time")),
+            request.POST.get("difficulty"),
+            ingredients,
+        )
+        return redirect("/all_recipes/")
 
+    return render(request, "add_recipe.html")
 
 
 
@@ -227,8 +241,3 @@ def list_categories(request):
 
     return render(request, 'categories.html', context)
 
-
-def add_recipe(request):
-    context = {
-    }
-    return render(request, 'home.html', context)
