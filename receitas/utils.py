@@ -1,7 +1,7 @@
 
 import pickle
 from pathlib import Path
-from receitas.Btree.BTree import BTree
+from receitas.Btree.BTree import BTree, build_bptree_index
 from receitas.Btree.Node import Node
 from receitas.Btree.Key import Key
 import struct
@@ -367,12 +367,15 @@ def save_recipe_to_bin(data):
 
     # Atualizar TRIE e B+ Tree incrementalmente
     TRIE.insert(data['title'].lower(), recipe_id, offset)
-    BT.insert_key(int(data['time']), recipe_id)
-
+    BT = BTree(50)
+    BT=build_bptree_index(BT)
+    
     index_path =  Path("receitas/data/trie.bin")
     with index_path.open("wb") as f:
         pickle.dump(TRIE, f)
 
+    print("Tempo gravado:", data['time'])
+    print("Tempo lido:", get_recipe_time(recipe_id))
 
     index_path =  Path("receitas/data/bptree.bin")
 
