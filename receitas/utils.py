@@ -8,6 +8,7 @@ import struct
 from receitas.structs import *
 from receitas.utilitario.globals import TRIE, BT
 from receitas.data_handler import add_ingredients, build_recipe_ingredient_relation
+import re
 
 import math
 
@@ -251,15 +252,6 @@ def parse_int(value):
     except:
         return None
     
-
-
-from pathlib import Path
-import re
-from receitas.data_handler import add_ingredients, build_recipe_ingredient_relation
-from receitas.structs import RECIPE_STRUCT, INGREDIENT_STRUCT, RECIPE_INGREDIENT_STRUCT
-from receitas.Btree.BTree import BTree
-from receitas.alfabeto_index import Trie
-from receitas.utilitario.globals import TRIE, BT
 
 def save_recipe_to_bin(data):
     """
