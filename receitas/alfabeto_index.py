@@ -90,4 +90,3 @@ def build_alfabeto_index(trie: Trie):
 
 if __name__ =="__main__":
     build_alfabeto_index()
-

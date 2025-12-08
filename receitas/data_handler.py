@@ -1,4 +1,3 @@
-
 import pandas as pd
 from pathlib import Path
 import struct
@@ -188,7 +187,7 @@ def data_handler():
     
     TRIE = Trie()
     TRIE=build_alfabeto_index(TRIE)
-    print(f"ingredientes: {stats["total_ingredients"]},relações{stats['recipe_ingredients']}, receitas{stats['total_recipes']}")
+    print(f'ingredientes: {stats["total_ingredients"]}, relações {stats["recipe_ingredients"]}, receitas {stats["total_recipes"]}')
     tend = time.time()
     stats["finish_time"]=tend-stats["start_time"]
     stats["message"]=".csv lido com sucesso. Árvore B+ criada com sucesso. Arquivos invertidos criados com sucesso. Trie criada com sucesso"

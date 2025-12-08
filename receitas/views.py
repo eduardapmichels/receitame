@@ -5,13 +5,14 @@ from receitas.Btree.BTree import BTree
 from .utils import *
 from django.http import JsonResponse
 from receitas.utilitario.add_new_recipe import add_new_recipe
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect  #carregam pagina HTML
 from receitas.structs import *
 from receitas.Btree.BTree import BTree, build_bptree_index
 from receitas.alfabeto_index import Trie, build_alfabeto_index
 
 from django.http import JsonResponse
 
+#pega o texto digitado e caminha na trie
 def search_recipes(request):
     q = request.GET.get("q", "").strip().lower()
     if not q:
@@ -27,6 +28,7 @@ def search_recipes(request):
     # Coleta resultados
     found = []
 
+    #pega todos os titulos com aquele prefixo
     def dfs(n):
         if n.end:
             for recipe_id, offset in n.positions:
@@ -46,9 +48,10 @@ def search_recipes(request):
             title = unpacked[1].decode("utf-8").replace("\x00", "").strip()
             results.append({"id": recipe_id, "title": title})
 
+    #retorna json com sugestao
     return JsonResponse({"results": results})
 
-
+#garante que BT e TRIE nao seja none e renderixa o home
 def index(request):
     global BT
     global TRIE
@@ -62,6 +65,8 @@ def index(request):
     }
     return render(request, 'home.html', context)
 
+
+#carrega receitas do csv - gera binarios - gera indices
 def csv_process(request):
     result = data_handler()  # aqui roda todo o CSV
     
@@ -132,12 +137,14 @@ def list_all(request):
 
     return render(request, "list_recipes.html", context)
 
+#carrega uma unica receita completa para o templete recipe.html e passa para o contexto
 def read_recipe(request, recipe_id):
 
     title = get_recipe_title(recipe_id)
     time = get_recipe_time(recipe_id)
     instructions = get_recipe_instructions(recipe_id)
     ingredients = get_recipe_ingredients(recipe_id)
+
 
     context = {
         "id": recipe_id,
@@ -149,12 +156,13 @@ def read_recipe(request, recipe_id):
 
     return render(request, "recipe.html", context)
 
+#pagina de filtros, le filtros do get, constroi lista de tag, se tem tag faz interseccao de ids, se nao tem pega tudo, paginacao e renderiza no categories.html
 def list_categories(request):
     #para selects
     difficulties = ["easy", "medium", "hard"]
     cuisines = load_all_cuisines()
 
-    # --- Parâmetros do GET ---
+    #Parâmetros do GET
     checked_vegan = 'checked_vegan' in request.GET
     checked_vegetarian = 'checked_vegetarian' in request.GET
     checked_gluten = 'checked_gluten' in request.GET
@@ -167,7 +175,7 @@ def list_categories(request):
     
 
 
-    # --- Construir lista de tags para intersect ---
+    #Construoe lista de tags para intersect
     tags = []
 
     if checked_vegan:
@@ -179,16 +187,16 @@ def list_categories(request):
     if checked_dairy:
         tags.append("dairy_free")
     
-    # Adiciona dificuldades, cuisines e categorias como tags também
+    #Adiciona dificuldades, cuisines e categorias como tags também
     tags += selected_difficulties
     tags += selected_cuisines
 
 
-    # --- Intersect dos IDs ---
+    #Intersect dos IDs
     if tags:
         filtered_ids = intersect_tags(tags, TAGS)
     else:
-        # Se nenhum filtro, pega todas as receitas
+        #Se nenhum filtro, pega todas as receitas
 
         
         recipes_bin_path = Path("receitas/data/recipes.bin")
@@ -196,18 +204,18 @@ def list_categories(request):
         total_recipes = size // RECIPE_STRUCT.size
         filtered_ids = set(range(1, total_recipes + 1))
 
-    # --- Paginar resultados ---
+    #Paginar resultados
     recipes_page = paginate(list(filtered_ids), page, per_page)
     total_results = len(filtered_ids)
     total_pages = (total_results + per_page - 1) // per_page
 
     query_params = request.GET.copy()
 
-    # força remover page para reconstruir nos botões
+    #força remover page para reconstruir nos botões
     if "page" in query_params:
         del query_params["page"]
 
-    # --- Montar contexto ---
+    #Monta contexto
     context = {
         "difficulties": difficulties,
         "cuisines": cuisines,
@@ -227,6 +235,8 @@ def list_categories(request):
 
     return render(request, 'categories.html', context)
 
+
+#adiciona receita manualmente, se for POST = enviar dados servidor (quando envia formulario navegador requere POST), se dados enviados, valida campos obrigarorios, ingredientes e salva
 def add_recipe(request):
     if request.method == "POST":
         title = request.POST.get("title", "").strip()
