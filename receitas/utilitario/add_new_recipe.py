@@ -124,7 +124,7 @@ def add_new_recipe(title, instructions, time_min, difficulty, ingredients_raw):
 
         ingredient_id = ingredients_dict[ing]
 
-        # measurement simples (você pode mudar isso depois)
+        # measurement simples
         measurement = b" " * 70
 
         # grava relação
