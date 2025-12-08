@@ -1,5 +1,6 @@
 from pathlib import Path
 import struct
+from receitas.structs import *
 
 from receitas.invertedIndex.tagnode import TagNode
 
@@ -48,11 +49,11 @@ class BinarySearchTree:
 
 
     def to_inverted_file(self, name):
-        TAG_STRUCT = struct.Struct("120sii")
-        ID_STRUCT = struct.Struct("i")
 
-        tags_data = Path(f"data/tags_data_{name}.bin")
-        tags_index = Path(f"data/tags_index_{name}.bin")
+
+
+        tags_data = Path(f"receitas/data/tags_data_{name}.bin")
+        tags_index = Path(f"receitas/data/tags_index_{name}.bin")
 
         with open(tags_data, "wb") as td, open(tags_index, "wb") as ti:
 
@@ -69,7 +70,7 @@ class BinarySearchTree:
                     offset += 4   # avançamos 4 bytes por ID (struct "i")
                 # escreve indexagem da tag
                 tag_bytes = node.tag.encode("utf-8")
-                tag_bytes = tag_bytes.ljust(120, b'\x00')
+                tag_bytes = tag_bytes.ljust(130, b'\x00')
                 ti.write(
                     TAG_STRUCT.pack(
                         tag_bytes,

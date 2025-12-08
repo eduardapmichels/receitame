@@ -5,14 +5,63 @@ from receitas.Btree.BTree import BTree
 from receitas.Btree.Node import Node
 from receitas.Btree.Key import Key
 import struct
+from receitas.structs import *
+from receitas.utilitario.globals import TRIE, BT
+from receitas.data_handler import add_ingredients, build_recipe_ingredient_relation
 
 import math
+
+################################################
+#LEITURA DA RECEITA
+################################################
+def get_recipe_instructions(recipe_id, file_path="receitas/data/recipes.bin"):
+    with open(file_path, "rb") as f:
+        offset = (recipe_id - 1) * RECIPE_STRUCT.size
+        f.seek(offset)
+        data = f.read(RECIPE_STRUCT.size)
+        if not data:
+            return None
+        unpacked = RECIPE_STRUCT.unpack(data)
+        return unpacked[2].decode("utf-8").strip("\x00")
+
+
+def get_ingredient_name(ingredient_id, file="receitas/data/ingredients.bin"):
+    with open(file, "rb") as f:
+        offset = (ingredient_id - 1) * INGREDIENT_STRUCT.size
+        f.seek(offset)
+        data = f.read(INGREDIENT_STRUCT.size)
+        if not data:
+            return None
+        iid, name = INGREDIENT_STRUCT.unpack(data)
+        return name.decode("utf-8").strip("\x00")
+
+
+def get_recipe_ingredients(recipe_id, file="receitas/data/recipe_ingredients.bin"):
+    ingredients = []
+    with open(file, "rb") as f:
+        while True:
+            data = f.read(RECIPE_INGREDIENT_STRUCT.size)
+            if not data:
+                break
+
+            _id, rid, ing_id, measurement = RECIPE_INGREDIENT_STRUCT.unpack(data)
+
+            if rid == recipe_id:
+                # Decodifica o measurement e remove padding/zeros
+                measurement_str = measurement.decode('utf-8').strip('\x00').strip()
+                ingredients.append((get_ingredient_name(ing_id), measurement_str))
+
+    return ingredients
+
+
+
+
 
 ###########################################################
 #B+Tree
 ###########################################################
-def get_recipes_page_bt(bt, page=1, per_page=200, min_time=None, max_time=None):
-    node = bt.root
+def get_recipes_page_bt(page=1, per_page=200, min_time=None, max_time=None):
+    node = BT.root
     while not node.is_leaf:
         node = node.children[0]
 
@@ -42,7 +91,9 @@ def get_recipes_page_bt(bt, page=1, per_page=200, min_time=None, max_time=None):
 # Trie - tree
 #########################################################
 
-def get_recipes_page_trie(trie, page=1, per_page=200):
+def get_recipes_page_trie(page=1, per_page=200):
+    if TRIE is None:
+        print("Erro: TRIE não foi carregada.")
     recipes = []
     count = 0
     start_index = (page - 1) * per_page
@@ -57,7 +108,7 @@ def get_recipes_page_trie(trie, page=1, per_page=200):
             cnt += count_dfs(child)
         return cnt
 
-    total_results = count_dfs(trie.root)
+    total_results = count_dfs(TRIE.root)
     total_pages = math.ceil(total_results / per_page)
 
     # agora pega apenas a página
@@ -77,33 +128,15 @@ def get_recipes_page_trie(trie, page=1, per_page=200):
                 return True
         return False
 
-    dfs(trie.root)
+    dfs(TRIE.root)
 
     return total_pages, recipes, total_results
 ###################################################################
 # Arquivos invertidos
 ###################################################################
-def load_tags(name):
-    TAG_STRUCT = struct.Struct("130sii")
-    index_path = Path(f"data/tags_index_{name}.bin")
-
-    index = {}
-
-    with open(index_path, "rb") as f:
-        while True:
-            chunk = f.read(TAG_STRUCT.size)
-            if not chunk:
-                break
-            tag_bytes, count, offset = TAG_STRUCT.unpack(chunk)
-            tag = tag_bytes.decode("utf-8").rstrip("\x00")
-            index[tag] = (count, offset)
-
-    return index
-
 
 def load_tag_ids(name, tag, index):
-    ID_STRUCT = struct.Struct("i")
-    data_path = Path(f"data/tags_data_{name}.bin")
+    data_path = Path(f"receitas/data/tags_data_{name}.bin")
 
     if tag not in index:
         return []
@@ -121,35 +154,16 @@ def load_tag_ids(name, tag, index):
     return ids
 
 
-def build_tags_index_cache(tags_folder="data"):
-    """Lê todos os arquivos de índice e retorna um cache {tag: (data_file, count, offset)}"""
-    TAG_STRUCT = struct.Struct("120sii")
-    
-    tags_index_cache = {}
-    index_files = list(Path(tags_folder).glob("tags_index_*.bin"))
-    for index_path in index_files:
-        data_path = Path(str(index_path).replace("index", "data"))
-        with open(index_path, "rb") as f_index:
-            while True:
-                bytes_read = f_index.read(TAG_STRUCT.size)
-                if not bytes_read:
-                    break
-                tag_bytes, count, offset = TAG_STRUCT.unpack(bytes_read)
-                tag_name = tag_bytes.decode("utf-8").rstrip("\x00")
-                tags_index_cache[tag_name] = (data_path, count, offset)
-    return tags_index_cache
-
-def intersect_tags(tags, tags_index_cache):
+def intersect_tags(tags, all_tags):
     """Retorna IDs que aparecem em todas as tags (modo AND)"""
-    ID_STRUCT = struct.Struct("i")
     sets_of_ids = []
 
     for tag in tags:
-        if tag not in tags_index_cache:
+        if tag not in all_tags:
             # tag não existe -> interseção vazia
             return set()
 
-        data_path, count, offset = tags_index_cache[tag]
+        data_path, count, offset = all_tags[tag]
         ids = set()
         with open(data_path, "rb") as f_data:
             f_data.seek(offset)
@@ -168,8 +182,7 @@ def intersect_tags(tags, tags_index_cache):
 
 
 def load_all_cuisines():
-    CUISINE_STRUCT = struct.Struct("i130s")
-    cuisines_path = Path("data/cuisines.bin")
+    cuisines_path = Path("receitas/data/cuisines.bin")
     cuisines = []
 
     if not cuisines_path.exists():
@@ -207,8 +220,7 @@ def paginate(all_filtered, page, per_page):
 
 
 
-def get_recipe_title(recipe_id, file_path="data/recipes.bin"):
-    RECIPE_STRUCT = struct.Struct("i120si5500si20s4?i")
+def get_recipe_title(recipe_id, file_path="receitas/data/recipes.bin"):
     with open(file_path, "rb") as f:
         offset = (recipe_id - 1) * RECIPE_STRUCT.size
         f.seek(offset)
@@ -220,8 +232,7 @@ def get_recipe_title(recipe_id, file_path="data/recipes.bin"):
         return title
     
 
-def get_recipe_time(recipe_id, file_path="data/recipes.bin"):
-    RECIPE_STRUCT = struct.Struct("i120si5500si20s4?i")
+def get_recipe_time(recipe_id, file_path="receitas/data/recipes.bin"):
     with open(file_path, "rb") as f:
         offset = (recipe_id - 1) * RECIPE_STRUCT.size
         f.seek(offset)
@@ -229,7 +240,7 @@ def get_recipe_time(recipe_id, file_path="data/recipes.bin"):
         if not data:
             return None
         unpacked = RECIPE_STRUCT.unpack(data)
-        return unpacked[4]  # tempo da receita
+        return unpacked[3]  # tempo da receita
 
 
 def parse_int(value):
@@ -241,3 +252,101 @@ def parse_int(value):
         return None
     
 
+
+from pathlib import Path
+import re
+from receitas.data_handler import add_ingredients, build_recipe_ingredient_relation
+from receitas.structs import RECIPE_STRUCT, INGREDIENT_STRUCT, RECIPE_INGREDIENT_STRUCT
+from receitas.Btree.BTree import BTree
+from receitas.alfabeto_index import Trie
+from receitas.utilitario.globals import TRIE, BT
+
+def save_recipe_to_bin(data):
+    """
+    Salva uma nova receita nos arquivos binários e atualiza TRIE e B+ Tree.
+    data: dict com keys -> title, time, difficulty, ingredients, instructions
+    """
+    global BT
+    global TRIE
+    # Caminhos para arquivos binários
+    r_path = Path("receitas/data/recipes.bin")
+    i_path = Path("receitas/data/ingredients.bin")
+    ri_path = Path("receitas/data/recipe_ingredients.bin")
+
+    r_path.parent.mkdir(parents=True, exist_ok=True)
+    i_path.parent.mkdir(parents=True, exist_ok=True)
+    ri_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Carregar IDs atuais
+    ingredients = {}
+    total_ingredients = 0
+    recipe_ingredients = 0
+    total_recipes = 0
+
+    if i_path.exists():
+        with open(i_path, "rb") as f:
+            while True:
+                bytes_read = f.read(INGREDIENT_STRUCT.size)
+                if not bytes_read:
+                    break
+                ingredient_id, name = INGREDIENT_STRUCT.unpack(bytes_read)
+                ingredients[name.decode("utf-8").strip()] = ingredient_id
+                total_ingredients = max(total_ingredients, ingredient_id)
+
+    if r_path.exists():
+        with open(r_path, "rb") as f:
+            while True:
+                bytes_read = f.read(RECIPE_STRUCT.size)
+                if not bytes_read:
+                    break
+                recipe_id = RECIPE_STRUCT.unpack(bytes_read)[0]
+                total_recipes = max(total_recipes, recipe_id)
+
+    # Nova receita
+    total_recipes += 1
+    recipe_id = total_recipes
+
+    # Processar ingredientes
+    ingredients_list = []
+    ingredients_measurement = []
+    pattern = r'\[(.*?)\]\s*(.*?)(?:,|$)'
+    matches = re.findall(pattern, data['ingredients'])
+    for measure, name in matches:
+        ingredients_list.append(name.strip().lower())
+        ingredients_measurement.append(f"[{measure.strip()}] {name.strip()}")
+
+    # Salvar nos arquivos binários
+    with open(r_path, "ab") as f_recipes, open(i_path, "ab") as f_ingredients, open(ri_path, "ab") as f_recipe_ingredients:
+        total_ingredients, recipe_ingredients = add_ingredients(
+            ingredients_list,
+            ingredients,
+            ingredients_measurement,
+            recipe_id,
+            total_ingredients,
+            recipe_ingredients,
+            f_ingredients,
+            f_recipe_ingredients,
+            INGREDIENT_STRUCT,
+            RECIPE_INGREDIENT_STRUCT
+        )
+
+        # Escrever a receita
+        offset = f_recipes.tell()  # posição atual no arquivo para referência na trie
+        f_recipes.write(RECIPE_STRUCT.pack(
+            recipe_id,
+            data['title'].encode('utf-8'),
+            data['instructions'].encode('utf-8'),
+            int(data['time']),
+            data['difficulty'].encode('utf-8'),
+            False,  # is_vegan
+            False,  # is_vegetarian
+            False,  # is_dairy_free
+            False,  # is_gluten_free
+            recipe_ingredients  # id da 1° relação receita-ingrediente
+        ))
+
+    # Atualizar TRIE e B+ Tree incrementalmente
+    TRIE.insert(data['title'].lower(), recipe_id, offset)
+    BT.insert_key(int(data['time']), recipe_id)
+
+    return f"Receita '{data['title']}' adicionada com sucesso!"

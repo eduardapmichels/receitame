@@ -4,199 +4,110 @@ import struct
 import json
 import re
 import time
-from receitas.Btree.BTree import BTree
+from receitas.Btree.BTree import BTree, build_bptree_index
 import pickle
 from pathlib import Path
 from receitas.alfabeto_index import TrieNode
-from receitas.alfabeto_index import Trie
-from receitas.alfabeto_index import build_alfabeto_index
+from receitas.alfabeto_index import build_alfabeto_index, Trie
 from receitas.invertedIndex.binarysearchtree import BinarySearchTree
-
-
-
-total_ingredients = 0 # Initialize recipe counter
-total_recipes = 0 # Initialize recipe counter
-total_cuisines = 0 # Initialize cuisine counter
-total_subcategories = 0 # Initialize subcategory counter
-media_ingredients = 0 #Average ingredients per recipe
-recipe_ingredients = 0
-
-
-RECIPE_STRUCT = struct.Struct("i120si5500si20s4?i")
-ING_STRUCT = struct.Struct("i130s")
-RECIPE_ING_STRUCT = struct.Struct("iii70s")
-
-def get_recipe_instructions(recipe_id, file_path="data/recipes.bin"):
-    with open(file_path, "rb") as f:
-        offset = (recipe_id - 1) * RECIPE_STRUCT.size
-        f.seek(offset)
-        data = f.read(RECIPE_STRUCT.size)
-        if not data:
-            return None
-        unpacked = RECIPE_STRUCT.unpack(data)
-        return unpacked[3].decode("utf-8").strip("\x00")
-
-
-def get_ingredient_name(ingredient_id, file="data/ingredients.bin"):
-    with open(file, "rb") as f:
-        offset = (ingredient_id - 1) * ING_STRUCT.size
-        f.seek(offset)
-        data = f.read(ING_STRUCT.size)
-        if not data:
-            return None
-        iid, name = ING_STRUCT.unpack(data)
-        return name.decode("utf-8").strip("\x00")
-
-
-def get_recipe_ingredients(recipe_id, file="data/recipe_ingredients.bin"):
-    ingredients = []
-
-    with open(file, "rb") as f:
-        while True:
-            data = f.read(RECIPE_ING_STRUCT.size)
-            if not data:
-                break
-
-            _id, rid, ing_id, measurement = RECIPE_ING_STRUCT.unpack(data)
-
-            if rid == recipe_id:
-                # Decodifica o measurement e remove padding/zeros
-                measurement_str = measurement.decode('utf-8').strip('\x00').strip()
-                ingredients.append((get_ingredient_name(ing_id), measurement_str))
-
-    return ingredients
+from receitas.structs import *
 
 
 
 
-def data_handler():
-    start_time = time.time()
-    global total_ingredients
-    global total_recipes
-    global total_cuisines 
-    global total_subcategories 
-    global media_ingredients 
-    global recipe_ingredients 
-
-    total_ingredients = 0 # Initialize recipe counter
-    total_recipes = 0 # Initialize recipe counter
-    total_cuisines = 0 # Initialize cuisine counter
-    total_subcategories = 0 # Initialize subcategory counter
-    media_ingredients = 0 #Average ingredients per recipe
-    recipe_ingredients = 0
-    bt = BTree(50) #Initialize B+Tree (time)
-
-    
 
 
-    RECIPE_STRUCT = struct.Struct("i120si5500si20s4?i")
-    r = Path("data/recipes.bin")
-    r.parent.mkdir(parents=True, exist_ok=True)
-
-
-    INGREDIENT_STRUCT = struct.Struct("i130s")
-    i = Path("data/ingredients.bin")
-    i.parent.mkdir(parents=True, exist_ok=True)
-
-    CUISINE_STRUCT = struct.Struct("i130s")
-    c = Path("data/cuisines.bin")
-    c.parent.mkdir(parents=True, exist_ok=True)
-
-    SUBCATEGORY_STRUCT = struct.Struct("i130s")
-    s = Path("data/subcategories.bin")
-    s.parent.mkdir(parents=True, exist_ok=True)
-
-
-    RECIPE_INGREDIENT_STRUCT = struct.Struct("iii70s")
-    ri = Path("data/recipe_ingredients.bin")
-    ri.parent.mkdir(parents=True, exist_ok=True)
-
-    RECIPE_CUISINE_STRUCT = struct.Struct("ii")
-    rc = Path("data/recipe_cuisines.bin")
-    rc.parent.mkdir(parents=True, exist_ok=True)
-
-    media_ingredients = 0 #Average ingredients per recipe
-    total_time = 0 #Total time for all recipes
-
-
-    # Functions to handle ingredients and their relations
-    def add_ingredients(ingredients_list, ingredients, ingredients_measurement, recipe_id):           
-        global total_ingredients
-        global recipe_ingredients
-        for a in range(len(ingredients_list)):
-            ingredients_list[a]= re.sub(r'^[^a-zA-ZÀ-ÿ]+', '', ingredients_list[a]) # Remove leading non-alphabetic characters
-            if ingredients_list[a] not in ingredients: # New ingredient
-                total_ingredients += 1
-                ingredient_id = len(ingredients) + 1
-                ingredients[ingredients_list[a]] = ingredient_id
-                f_ingredients.write(INGREDIENT_STRUCT.pack( # Write ingredient to binary file
-                    ingredient_id,
-                    ingredients_list[a].encode('utf-8'),
-                ))
-            else:
-                ingredient_id = ingredients[ingredients_list[a]]
-            recipe_ingredients += 1
-            build_recipe_ingredient_relation(recipe_id, ingredient_id, ingredients_measurement[a], ingredients_list[a], recipe_ingredients)
-        return 0
-
-    # Function to build recipe-ingredient relation
-    def build_recipe_ingredient_relation(recipe_id, ingredient_id, measurement, ingredient_name, recipe_ingredients):
-        index = measurement.find(ingredient_name[:3])
-        measurement= measurement[:index].strip().encode('utf-8')
-        f_recipe_ingredients.write(RECIPE_INGREDIENT_STRUCT.pack( # Write relation to binary file
-            recipe_ingredients,
-            recipe_id,
-            ingredient_id,
-            measurement,
-        ))
-
-        return 0
-
-
-    # Function to handle cuisines
-    def add_cuisines(recipe_id, cuisine_list):
-        global total_cuisines
-        for cuisine in cuisine_list:
-            if cuisine not in cuisines: # New cuisine
-                total_cuisines += 1
-                cuisine_id = total_cuisines
-                cuisines[cuisine] = cuisine_id
-                f_cuisines.write(CUISINE_STRUCT.pack( # Write cuisine to binary file
-                    cuisine_id,
-                    cuisine.encode('utf-8'),
-                ))
-            else:
-                cuisine_id = cuisines[cuisine]
-            build_recipe_cuisine_relation(recipe_id, cuisine_id)
-        return 0
-
-    def build_recipe_cuisine_relation(recipe_id, cuisine_id):
-        f_recipe_cuisines.write(RECIPE_CUISINE_STRUCT.pack( # Write relation to binary file
-            recipe_id,
-            cuisine_id,
-        ))
-
-        return 0
-    
-    # Function to handle subcategories
-    def add_subcategories(recipe_id, subcategory):
-        global total_subcategories
-        if subcategory not in subcategories: # New subcategory
-            total_subcategories += 1
-            subcategory_id = total_subcategories
-            subcategories[subcategory] = subcategory_id
-            f_subcategories.write(SUBCATEGORY_STRUCT.pack(
-                subcategory_id,
-                subcategory.encode('utf-8')
+def add_ingredients(ingredients_list, ingredients, ingredients_measurement, recipe_id, total_ingredients, recipe_ingredients, f_ingredients, f_recipe_ingredients, INGREDIENT_STRUCT, RECIPE_INGREDIENT_STRUCT):           
+    for a in range(len(ingredients_list)):
+        ingredients_list[a]= re.sub(r'^[^a-zA-ZÀ-ÿ]+', '', ingredients_list[a]) # Remove leading non-alphabetic characters
+        if ingredients_list[a] not in ingredients: # New ingredient
+            total_ingredients += 1
+            ingredient_id = len(ingredients) + 1
+            ingredients[ingredients_list[a]] = ingredient_id
+            f_ingredients.write(INGREDIENT_STRUCT.pack( # Write ingredient to binary file
+                ingredient_id,
+                ingredients_list[a].encode('utf-8'),
             ))
         else:
-            subcategory_id = subcategories[subcategory]
+            ingredient_id = ingredients[ingredients_list[a]]
+        recipe_ingredients += 1
+        build_recipe_ingredient_relation(recipe_id, ingredient_id, ingredients_measurement[a], ingredients_list[a], recipe_ingredients,f_recipe_ingredients, RECIPE_INGREDIENT_STRUCT)
+    return total_ingredients, recipe_ingredients
 
-        return subcategory_id
+# Function to build recipe-ingredient relation
+def build_recipe_ingredient_relation(recipe_id, ingredient_id, measurement, ingredient_name, recipe_ingredients, f_recipe_ingredients, RECIPE_INGREDIENT_STRUCT):
+    index = measurement.find(ingredient_name[:3])
+    measurement= measurement[:index].strip().encode('utf-8')
+    f_recipe_ingredients.write(RECIPE_INGREDIENT_STRUCT.pack( # Write relation to binary file
+        recipe_ingredients,
+        recipe_id,
+        ingredient_id,
+        measurement,
+    ))
+
+    return 0
+
+# Function to handle cuisines
+def add_cuisines(total_cuisines, recipe_id, cuisine_list, cuisines, f_cuisines, f_recipe_cuisines, CUISINE_STRUCT, RECIPE_CUISINE_STRUCT):
+    for cuisine in cuisine_list:
+        if cuisine not in cuisines: # New cuisine
+            total_cuisines += 1
+            cuisine_id = total_cuisines
+            cuisines[cuisine] = cuisine_id
+            f_cuisines.write(CUISINE_STRUCT.pack( # Write cuisine to binary file
+                cuisine_id,
+                cuisine.encode('utf-8'),
+            ))
+        else:
+            cuisine_id = cuisines[cuisine]
+        build_recipe_cuisine_relation(recipe_id, cuisine_id, f_recipe_cuisines, RECIPE_CUISINE_STRUCT)
+    return total_cuisines
+
+def build_recipe_cuisine_relation(recipe_id, cuisine_id, f_recipe_cuisines, RECIPE_CUISINE_STRUCT):
+    f_recipe_cuisines.write(RECIPE_CUISINE_STRUCT.pack( # Write relation to binary file
+        recipe_id,
+        cuisine_id,
+    ))
+
+    return 0
+
+def data_handler():
+    stats = {"start_time": time.time(),
+    "total_ingredients": 0,
+    "total_recipes":0,
+    "total_cuisines":0,
+    "media_ingredients":0,
+    "recipe_ingredients":0,
+    "media_ingredients":0,
+    "total_time":0,
+    }
+
+
+    
+    r = Path("receitas/data/recipes.bin")
+    r.parent.mkdir(parents=True, exist_ok=True)
+
+    
+    i = Path("receitas/data/ingredients.bin")
+    i.parent.mkdir(parents=True, exist_ok=True)
+
+    
+    c = Path("receitas/data/cuisines.bin")
+    c.parent.mkdir(parents=True, exist_ok=True)
+
+
+    
+    ri = Path("receitas/data/recipe_ingredients.bin")
+    ri.parent.mkdir(parents=True, exist_ok=True)
+
+    
+    rc = Path("receitas/data/recipe_cuisines.bin")
+    rc.parent.mkdir(parents=True, exist_ok=True)
 
 
 
-    t0=time.time()
+
+    
 
     recipes = None
 
@@ -212,36 +123,30 @@ def data_handler():
         recipes = recipes.drop_duplicates(subset=['recipe_title'])
         ingredients = {}
         cuisines = {}
-        subcategories = {}
+
         
+      
+    
+                
     except FileNotFoundError:
         
-        print("The file 'data/recipes_extended.csv' was not found.")
-        return {"total_recipes": 0, "time": 0, "message": "The file 'data/recipes_extended.csv' was not found."} 
+        print("The file aaaaa'resipes/data/recipes_extended.csv' was not found.")
+        stats["message"]="File not Found"
+        return stats 
 
         
-    if recipes is None:
-        return {"total_recipes": 0, "time": 0, "message":"The file 'data/recipes_extended.csv' was not found."}  # Evita erro
-    
-
-    tcsv = time.time()
-    print(f"Time to read CSV: {tcsv-t0} seconds")
-
-    t1 = time.time()
-    with open(r, "wb") as f_recipes, open(i, "wb") as f_ingredients, open(ri, "wb") as f_recipe_ingredients, open(c, "wb") as f_cuisines, open(rc, "wb") as f_recipe_cuisines, open(s, "wb") as f_subcategories:
+    with open(r, "wb") as f_recipes, open(i, "wb") as f_ingredients, open(ri, "wb") as f_recipe_ingredients, open(c, "wb") as f_cuisines, open(rc, "wb") as f_recipe_cuisines:
         for row in recipes.itertuples(index=True):
-            total_recipes += 1
-            add_ingredients(row.ingredients_canonical, ingredients, row.ingredients_raw, total_recipes)
-            add_cuisines(total_recipes, row.cuisine_list)
-            subcategory_id = add_subcategories(total_recipes, row.subcategory)
+            id_relacao_ingrediente = stats["recipe_ingredients"]
+            stats["total_recipes"] += 1       
+            stats["total_ingredients"], stats["recipe_ingredients"]=add_ingredients(row.ingredients_canonical, ingredients, row.ingredients_raw, stats["total_recipes"], stats["total_ingredients"], stats["recipe_ingredients"],f_ingredients, f_recipe_ingredients, INGREDIENT_STRUCT, RECIPE_INGREDIENT_STRUCT)
+            stats["total_cuisines"] = add_cuisines(stats["total_cuisines"],stats["total_recipes"], row.cuisine_list, cuisines, f_cuisines, f_recipe_cuisines, CUISINE_STRUCT, RECIPE_CUISINE_STRUCT)
             time_recipe = row.est_prep_time_min + row.est_cook_time_min
-            total_time += time_recipe
-            bt.insert_key(time_recipe, total_recipes)
-            id_relacao_ingrediente = recipe_ingredients
+            stats["total_time"] += time_recipe
+            
             f_recipes.write(RECIPE_STRUCT.pack(
-                total_recipes,
+                stats["total_recipes"],
                 row.recipe_title.encode('utf-8'),
-                subcategory_id,
                 row.directions.encode('utf-8'),
                 time_recipe,
                 row.difficulty.encode('utf-8'),
@@ -252,132 +157,42 @@ def data_handler():
                 id_relacao_ingrediente          #id da 1° relação receita-ingrediente
             ))
 
-
-    
-    tbin = time.time()
-    tend = time.time()
-    total_elapsed = tend - start_time
-    print(f"\n\n total receitas {total_recipes}")
-    print(f"total ingredientes {total_ingredients}")
-    print(f"cuisines {total_cuisines}")
-    print(f"total subcategories {total_subcategories} \n\n")
-
-
-
-    # dentro do data_handler, depois de construir bt
-    pickle_path = Path("data/bptree.bin")
-    pickle_path.parent.mkdir(parents=True, exist_ok=True)
-
-    with open(pickle_path, "wb") as f:
-        # protocol mais recente
-        pickle.dump(bt, f, protocol=pickle.HIGHEST_PROTOCOL)
-    
-    trie = Trie()
-    build_alfabeto_index(trie)
-
+                
     #Arquivos binarios
     # depois de percorrer o CSV e criar IDs
-    bst_vegan = BinarySearchTree()
-    bst_vegetarian = BinarySearchTree()
-    bst_gluten_free = BinarySearchTree()
-    bst_dairy_free = BinarySearchTree()
+    bst_flags = BinarySearchTree()
     bst_cuisines = BinarySearchTree()
     bst_difficulty = BinarySearchTree()
 
-    # preenche as BSTs com os IDs já processados
+
     total_recipes = 0
     for recipe in recipes.itertuples():
         total_recipes += 1
-        if recipe.is_vegan: bst_vegan.insert_recipe("vegan", total_recipes)
-        if recipe.is_vegetarian: bst_vegetarian.insert_recipe("vegetarian", total_recipes)
-        if recipe.is_gluten_free: bst_gluten_free.insert_recipe("gluten_free", total_recipes)
-        if recipe.is_dairy_free: bst_dairy_free.insert_recipe("dairy_free", total_recipes)
+        if recipe.is_vegan: bst_flags.insert_recipe("vegan", total_recipes)
+        if recipe.is_vegetarian: bst_flags.insert_recipe("vegetarian", total_recipes)
+        if recipe.is_gluten_free: bst_flags.insert_recipe("gluten_free", total_recipes)
+        if recipe.is_dairy_free: bst_flags.insert_recipe("dairy_free", total_recipes)
         for cuisine in recipe.cuisine_list:
             bst_cuisines.insert_recipe(cuisine, total_recipes)
         bst_difficulty.insert_recipe(recipe.difficulty, total_recipes)
 
     # cria os arquivos invertidos
-    bst_vegan.to_inverted_file("vegan")
-    bst_vegetarian.to_inverted_file("vegetarian")
-    bst_gluten_free.to_inverted_file("gluten_free")
-    bst_dairy_free.to_inverted_file("dairy_free")
+    bst_flags.to_inverted_file("flags")
     bst_cuisines.to_inverted_file("cuisines")
     bst_difficulty.to_inverted_file("difficulty")
 
-
-
-    return {"total_recipes": total_recipes, "time": total_elapsed, "message": "Success"}
-
-
-def next_id():
-    path = Path("data/recipes.bin")
-    if not path.exists():
-        return 1
-    return path.stat().st_size // RECIPE_STRUCT.size + 1
-
-def append_recipe(title, instructions, time_min, difficulty, ingredients):
-    rid = next_id()
-
-    # Se não tiver ingredientes, first_rel = 0 (sem relação)
-    if not ingredients:
-        first_rel = 0
-    else:
-        first_rel = append_ingredients(rid, ingredients)
-
-    with open("data/recipes.bin", "ab") as f:
-        f.write(RECIPE_STRUCT.pack(
-            rid,
-            title.encode(),
-            1,  # subcat (placeholder)
-            instructions.encode(),
-            time_min,
-            difficulty.encode(),
-            0, 0, 0, 0,
-            first_rel
-        ))
-
-    update_indexes(rid, time_min)
-    return rid
-
-
-def append_ingredients(rid, ingredients):
-    # retorna o ponteiro (offset) para o primeiro ingrediente
-    first_rel = 0
-    last_offset = 0
-
-    with open("data/rel.bin", "ab+") as f:
-        for ing in ingredients:
-            f.seek(0, 2)  # ir para o final
-            current_offset = f.tell()
-
-            # gravar relação R: (rid, ingrediente, next)
-            f.write(REL_STRUCT.pack(
-                rid,
-                ing.encode(),
-                0  # next pointer (zerado por enquanto)
-            ))
-
-            if first_rel == 0:
-                first_rel = current_offset
-            else:
-                # ajustar o "next" do anterior
-                f.seek(last_offset + REL_NEXT_OFFSET)
-                f.write(int.to_bytes(current_offset, REL_NEXT_SIZE))
-
-            last_offset = current_offset
-
-    return first_rel
-
-
-def update_indexes(recipe_id, time_min):
-    # TRIE
+    bpt = BTree(50)
+    build_bptree_index(bpt)
+    
     trie = Trie()
     build_alfabeto_index(trie)
+    print(f"ingredientes: {stats["total_ingredients"]},relações{stats['recipe_ingredients']}, receitas{stats['total_recipes']}")
+    tend = time.time()
+    stats["finish_time"]=tend-stats["start_time"]
+    stats["message"]=".csv lido com sucesso. Árvore B+ criada com sucesso. Arquivos invertidos criados com sucesso. Trie criada com sucesso"
 
-    # B+Tree
-    with open("data/bptree.bin", "rb") as f:
-        bt = pickle.load(f)
-    bt.insert_key(time_min, recipe_id)
-    with open("data/bptree.bin", "wb") as f:
-        pickle.dump(bt, f)
-   
+
+    return stats
+ 
+
+    
