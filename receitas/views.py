@@ -1,14 +1,14 @@
 from django.shortcuts import render
 from receitas.data_handler import data_handler
-from receitas.utilitario.globals import BT, TRIE
+from receitas.utilitario.globals import BT, TRIE, TAGS
+from receitas.Btree.BTree import BTree
 from .utils import *
-from receitas.data_handler import get_recipe_instructions, get_recipe_ingredients
 from django.http import JsonResponse
 from receitas.utilitario.add_new_recipe import add_new_recipe
 from django.shortcuts import render, redirect
-
-RECIPE_STRUCT = struct.Struct("i120si5500si20s4?i")
-
+from receitas.structs import *
+from receitas.Btree.BTree import BTree, build_bptree_index
+from receitas.alfabeto_index import Trie, build_alfabeto_index
 
 from django.http import JsonResponse
 
@@ -38,7 +38,7 @@ def search_recipes(request):
 
     # Ler títulos verdadeiros do arquivo
     results = []
-    with open("data/recipes.bin", "rb") as f:
+    with open("receitas/data/recipes.bin", "rb") as f:
         for recipe_id, offset in found[:20]:
             f.seek(offset)
             data = f.read(RECIPE_STRUCT.size)
@@ -48,23 +48,15 @@ def search_recipes(request):
 
     return JsonResponse({"results": results})
 
-def add_recipe(request):
-    if request.method == "POST":
-        ingredients = request.POST.get("ingredients").split(",")
-        rid = add_new_recipe(
-            request.POST.get("title"),
-            request.POST.get("instructions"),
-            int(request.POST.get("time")),
-            request.POST.get("difficulty"),
-            ingredients,
-        )
-        return redirect("/all_recipes/")
-
-    return render(request, "add_recipe.html")
-
-
 
 def index(request):
+    global BT
+    global TRIE
+    if BT==None:
+        BT=BTree(50)
+    if TRIE==None:
+        TRIE=Trie
+    
     context = {
 
     }
@@ -75,7 +67,7 @@ def csv_process(request):
     
     context = {
         "total_recipes": result["total_recipes"],
-        "elapsed_time": result["time"],
+        "elapsed_time": result["finish_time"],
         "message": result["message"]
     }
     return render(request, 'home.html', context)
@@ -106,7 +98,6 @@ def list_all(request):
             if min_time > max_time:
                 min_time, max_time = max_time, min_time
         pages_max, recipes, total_r_found =get_recipes_page_bt(
-            BT,
             page=page,
             per_page=200,
             min_time=min_time,
@@ -117,7 +108,6 @@ def list_all(request):
         min_time = None
         max_time = None
         pages_max, recipes, total_r_found =get_recipes_page_trie(
-            TRIE,
             page=page,
             per_page=70,
         )
@@ -159,8 +149,6 @@ def read_recipe(request, recipe_id):
 
     return render(request, "recipe.html", context)
 
-
-
 def list_categories(request):
     #para selects
     difficulties = ["easy", "medium", "hard"]
@@ -176,9 +164,7 @@ def list_categories(request):
     page = int(request.GET.get('page', 1))
     per_page = 70
 
-    # --- Carregar cache dos arquivos invertidos ---
-    tags_index_cache = build_tags_index_cache("data")
-
+    
 
 
     # --- Construir lista de tags para intersect ---
@@ -200,12 +186,12 @@ def list_categories(request):
 
     # --- Intersect dos IDs ---
     if tags:
-        filtered_ids = intersect_tags(tags, tags_index_cache)
+        filtered_ids = intersect_tags(tags, TAGS)
     else:
         # Se nenhum filtro, pega todas as receitas
 
         
-        recipes_bin_path = Path("data/recipes.bin")
+        recipes_bin_path = Path("receitas/data/recipes.bin")
         size = recipes_bin_path.stat().st_size
         total_recipes = size // RECIPE_STRUCT.size
         filtered_ids = set(range(1, total_recipes + 1))
@@ -241,3 +227,35 @@ def list_categories(request):
 
     return render(request, 'categories.html', context)
 
+def add_recipe(request):
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()
+        time_min = request.POST.get("time", "").strip()
+        difficulty = "easy"
+        ingredients_input = request.POST.get("ingredients", "").strip()
+        instructions = request.POST.get("instructions", "").strip()
+
+        # Validar campos obrigatórios
+        if not title or not time_min or not difficulty or not ingredients_input or not instructions:
+            message = "Todos os campos são obrigatórios."
+            return render(request, "add_recipe.html", {"message": message})
+
+        # Validar ingredientes
+        ingredients_list, ingredients_measurement, error = process_ingredients_form(ingredients_input)
+        if error:
+            return render(request, "add_recipe.html", {"message": error})
+
+        # Dados já validados
+        data = {
+            "title": title,
+            "time": time_min,
+            "difficulty": difficulty,
+            "ingredients": ingredients_input,  # o save_recipe vai usar process_ingredients_form de novo
+            "instructions": instructions
+        }
+
+        # Salvar receita
+        message = save_recipe_to_bin(data)
+        return redirect("list_all")
+
+    return render(request, "add_recipe.html")

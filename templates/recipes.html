@@ -34,11 +34,15 @@
     </thead>
     <tbody>
         {% for time, rid, rtitle in recipes %}
+        
+            {% if rtitle != None %}
             <tr>
                 <td><a href="/recipe/{{ rid }}/">{{ rtitle }}</a></td>
                 <td>{{ time }}</td>
                 <td>{{ rid }}</td>
+                
             </tr>
+            {% endif %}
         {% endfor %}
     </tbody>
 </table>

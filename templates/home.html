@@ -6,6 +6,10 @@
 {% endblock %}
 
 {% block content %}
+    {{context}}
+    {{total_recipes}}
+    {{total_ingredients}}
+    {{recipe_ingredients}}
     <div class="container">
         <div class="box">
            <a href="{% url 'csvprocess' %}"> <button type="button" class="btn btn-primary btn-lg">Processar CSV</button></a>

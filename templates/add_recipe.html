@@ -1,33 +1,40 @@
 {% extends 'menu.html' %}
 {% load static %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'add.css' %}">
+{% endblock %}
+
 {% block content %}
 
-<h1>Adicionar Receita</h1>
 
-<form method="POST">
-    {% csrf_token %}
+<div id="container_receita">
+    <h1>Adicionar Receita</h1>
 
-    <label>Título:</label>
-    <input type="text" name="title" required><br><br>
+    {% if message %}
+        <div style="color:red; font-weight:bold; margin-bottom:15px;">
+            {{ message }}
+        </div>
+    {% endif %}
 
-    <label>Tempo (minutos):</label>
-    <input type="number" name="time" required><br><br>
+    <form method="POST">
+        {% csrf_token %}
 
-    <label>Dificuldade:</label>
-    <select name="difficulty">
-        <option value="easy">Fácil</option>
-        <option value="medium">Médio</option>
-        <option value="hard">Difícil</option>
-    </select><br><br>
+        <label>Título:</label>
+        <input type="text" name="title" required value="{{ request.POST.title|default:'' }}"><br><br>
 
-    <label>Ingredientes (separados por vírgula):</label><br>
-    <textarea name="ingredients" rows="4" cols="40" placeholder="ex: tomate, queijo, chocolate, sal..."></textarea><br><br>
+        <label>Tempo (minutos):</label>
+        <input type="number" name="time" required value="{{ request.POST.time|default:'' }}"><br><br>
 
-    <label>Instruções:</label><br>
-    <textarea name="instructions" rows="6" cols="40" required></textarea><br><br>
 
-    <button type="submit">Salvar Receita</button>
-</form>
+        <label>Ingredientes (formato: [quantidade] ingrediente, separados por vírgula):</label><br>
+        <textarea name="ingredients" rows="4" cols="40" placeholder="[1] tomate, [500 gramas] queijo, [1 xícara] chocolate, [uma pitada] sal..." required>{{ request.POST.ingredients|default:'' }}</textarea><br><br>
+
+        <label>Instruções:</label><br>
+        <textarea name="instructions" rows="6" cols="40" required>{{ request.POST.instructions|default:'' }}</textarea><br><br>
+
+        <button type="submit">Salvar Receita</button>
+    </form>
+</div>
 
 {% endblock %}

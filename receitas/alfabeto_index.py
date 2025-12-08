@@ -3,8 +3,8 @@ import re
 import time
 import pickle
 from pathlib import Path
+from receitas.structs import *
 
-RECIPE_STRUCT = struct.Struct("i120si5500si20s4?i")
 
 class TrieNode:
     def __init__(self):
@@ -46,15 +46,15 @@ converte a TRIE para dicionário
 Salva em recipes_index.bin"""
 
 def build_alfabeto_index(trie: Trie):
-    bin_path = Path("data/recipes.bin")
+    bin_path = Path("receitas/data/recipes.bin")
+   
 
     try:
 
         with open(bin_path, "rb") as f:
+            print(f)
             offset = 0
-
             start = time.time()
-
             while True:
                 data = f.read(RECIPE_STRUCT.size)
                 if not data:
@@ -72,7 +72,7 @@ def build_alfabeto_index(trie: Trie):
 
         bin_start = time.time()
 
-        index_path =  Path("data/trie.bin")
+        index_path =  Path("receitas/data/trie.bin")
 
         with index_path.open("wb") as f:
             pickle.dump(trie, f)
@@ -80,6 +80,7 @@ def build_alfabeto_index(trie: Trie):
         print("tempo para gerar bin",time.time() - bin_start, "segundos")
 
         print("Índice em ordem alfabetica criado com sucesso")
+        return trie
     except FileNotFoundError:
         print(f"ERRO: ARQUIVO NAO ENCONTRADO EM {bin_path}. VERIFIQUE O CAMINHP")
     except Exception as e:
