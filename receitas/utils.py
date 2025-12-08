@@ -253,6 +253,34 @@ def parse_int(value):
         return None
     
 
+
+def process_ingredients_form(ingredients_input):
+    """
+    Processa o input do formulário de ingredientes.
+    Espera o formato: [quantidade] ingrediente, [quantidade] ingrediente, ...
+    Retorna duas listas: nomes de ingredientes e medidas.
+    """
+    if not ingredients_input.strip():
+        return None, None, "Nenhum ingrediente informado."
+
+    ingredients_list = []
+    ingredients_measurement = []
+
+    # Separar por vírgula
+    items = [item.strip() for item in ingredients_input.split(',') if item.strip()]
+
+    for idx, item in enumerate(items, start=1):
+        # Validar o formato [medida] ingrediente
+        match = re.match(r'\[(.*?)\]\s*(.+)', item)
+        if not match:
+            return None, None, f"Erro no ingrediente #{idx}: '{item}'. Use o formato [quantidade] ingrediente."
+        
+        measure, name = match.groups()
+        ingredients_list.append(name.lower())
+        ingredients_measurement.append(measure.strip())  # só a medida
+
+    return ingredients_list, ingredients_measurement, None
+
 def save_recipe_to_bin(data):
     """
     Salva uma nova receita nos arquivos binários e atualiza TRIE e B+ Tree.
@@ -341,4 +369,13 @@ def save_recipe_to_bin(data):
     TRIE.insert(data['title'].lower(), recipe_id, offset)
     BT.insert_key(int(data['time']), recipe_id)
 
+    index_path =  Path("receitas/data/trie.bin")
+    with index_path.open("wb") as f:
+        pickle.dump(TRIE, f)
+
+
+    index_path =  Path("receitas/data/bptree.bin")
+
+    with index_path.open("wb") as f:
+        pickle.dump(BT, f)
     return f"Receita '{data['title']}' adicionada com sucesso!"

@@ -98,6 +98,7 @@ def build_bptree_index(bpt: BTree):
         print("tempo para gerar bin",time.time() - bin_start, "segundos")
 
         print("Índice em ordem de tempo criado com sucesso")
+        return bpt
     except FileNotFoundError:
         print(f"ERRO: ARQUIVO NAO ENCONTRADO EM {bin_path}. VERIFIQUE O CAMINHP")
     except Exception as e:

@@ -7,32 +7,34 @@
 
 {% block content %}
 
-<h1>Adicionar Receita</h1>
 
 <div id="container_receita">
+    <h1>Adicionar Receita</h1>
+
+    {% if message %}
+        <div style="color:red; font-weight:bold; margin-bottom:15px;">
+            {{ message }}
+        </div>
+    {% endif %}
+
     <form method="POST">
         {% csrf_token %}
 
         <label>Título:</label>
-        <input type="text" name="title" required><br><br>
+        <input type="text" name="title" required value="{{ request.POST.title|default:'' }}"><br><br>
 
         <label>Tempo (minutos):</label>
-        <input type="number" name="time" required><br><br>
+        <input type="number" name="time" required value="{{ request.POST.time|default:'' }}"><br><br>
 
-        <label>Dificuldade:</label>
-        <select name="difficulty">
-            <option value="easy">Fácil</option>
-            <option value="medium">Médio</option>
-            <option value="hard">Difícil</option>
-        </select><br><br>
 
-        <label>Ingredientes (separados por vírgula), medidas entre colchetes:</label><br>
-        <textarea name="ingredients" rows="4" cols="40" placeholder="ex:[1] tomate,[500 gramas de] queijo, [1 xícara de] chocolate, [uma pitada de] sal..."></textarea><br><br>
+        <label>Ingredientes (formato: [quantidade] ingrediente, separados por vírgula):</label><br>
+        <textarea name="ingredients" rows="4" cols="40" placeholder="[1] tomate, [500 gramas] queijo, [1 xícara] chocolate, [uma pitada] sal..." required>{{ request.POST.ingredients|default:'' }}</textarea><br><br>
 
         <label>Instruções:</label><br>
-        <textarea name="instructions" rows="6" cols="40" required></textarea><br><br>
+        <textarea name="instructions" rows="6" cols="40" required>{{ request.POST.instructions|default:'' }}</textarea><br><br>
 
         <button type="submit">Salvar Receita</button>
     </form>
 </div>
+
 {% endblock %}

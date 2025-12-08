@@ -80,6 +80,7 @@ def build_alfabeto_index(trie: Trie):
         print("tempo para gerar bin",time.time() - bin_start, "segundos")
 
         print("Índice em ordem alfabetica criado com sucesso")
+        return trie
     except FileNotFoundError:
         print(f"ERRO: ARQUIVO NAO ENCONTRADO EM {bin_path}. VERIFIQUE O CAMINHP")
     except Exception as e:

@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from receitas.data_handler import data_handler
 from receitas.utilitario.globals import BT, TRIE, TAGS
+from receitas.Btree.BTree import BTree
 from .utils import *
 from django.http import JsonResponse
 from receitas.utilitario.add_new_recipe import add_new_recipe
@@ -49,6 +50,13 @@ def search_recipes(request):
 
 
 def index(request):
+    global BT
+    global TRIE
+    if BT==None:
+        BT=BTree(50)
+    if TRIE==None:
+        TRIE=Trie
+    
     context = {
 
     }
@@ -219,45 +227,35 @@ def list_categories(request):
 
     return render(request, 'categories.html', context)
 
-
 def add_recipe(request):
     if request.method == "POST":
-        title = request.POST.get("title")
-        time_min = request.POST.get("time")
-        difficulty = request.POST.get("difficulty")
-        ingredients = request.POST.get("ingredients")
-        instructions = request.POST.get("instructions")
+        title = request.POST.get("title", "").strip()
+        time_min = request.POST.get("time", "").strip()
+        difficulty = "easy"
+        ingredients_input = request.POST.get("ingredients", "").strip()
+        instructions = request.POST.get("instructions", "").strip()
 
+        # Validar campos obrigatórios
+        if not title or not time_min or not difficulty or not ingredients_input or not instructions:
+            message = "Todos os campos são obrigatórios."
+            return render(request, "add_recipe.html", {"message": message})
+
+        # Validar ingredientes
+        ingredients_list, ingredients_measurement, error = process_ingredients_form(ingredients_input)
+        if error:
+            return render(request, "add_recipe.html", {"message": error})
+
+        # Dados já validados
         data = {
             "title": title,
             "time": time_min,
             "difficulty": difficulty,
-            "ingredients": ingredients,
+            "ingredients": ingredients_input,  # o save_recipe vai usar process_ingredients_form de novo
             "instructions": instructions
         }
 
+        # Salvar receita
         message = save_recipe_to_bin(data)
-        return render(request, "add_recipe.html", {"message": message})
-
-    return render(request, "add_recipe.html")
-
-
-    if request.method == "POST":
-        title = request.POST.get("title")
-        time_min = request.POST.get("time")
-        difficulty = request.POST.get("difficulty")
-        ingredients = request.POST.get("ingredients")
-        instructions = request.POST.get("instructions")
-
-        data = {
-            "title": title,
-            "time": time_min,
-            "difficulty": difficulty,
-            "ingredients": ingredients,
-            "instructions": instructions
-        }
-
-        message = save_recipe_to_bin(data)
-        return render(request, "add_recipe.html", {"message": message})
+        return redirect("list_all")
 
     return render(request, "add_recipe.html")

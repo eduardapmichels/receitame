@@ -11,6 +11,7 @@ from receitas.alfabeto_index import TrieNode
 from receitas.alfabeto_index import build_alfabeto_index, Trie
 from receitas.invertedIndex.binarysearchtree import BinarySearchTree
 from receitas.structs import *
+from receitas.utilitario.globals import *
 
 
 
@@ -181,11 +182,11 @@ def data_handler():
     bst_cuisines.to_inverted_file("cuisines")
     bst_difficulty.to_inverted_file("difficulty")
 
-    bpt = BTree(50)
-    build_bptree_index(bpt)
+    BT = BTree(50)
+    BT=build_bptree_index(BT)
     
-    trie = Trie()
-    build_alfabeto_index(trie)
+    TRIE = Trie()
+    TRIE=build_alfabeto_index(TRIE)
     print(f"ingredientes: {stats["total_ingredients"]},relações{stats['recipe_ingredients']}, receitas{stats['total_recipes']}")
     tend = time.time()
     stats["finish_time"]=tend-stats["start_time"]
