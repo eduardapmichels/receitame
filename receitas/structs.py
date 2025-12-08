@@ -1,3 +1,4 @@
+#estruturas usadas
 import struct
 RECIPE_STRUCT = struct.Struct("i120s5500si20s4?i")
 INGREDIENT_STRUCT = struct.Struct("i130s")

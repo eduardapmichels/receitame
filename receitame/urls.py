@@ -31,4 +31,3 @@ urlpatterns = [
     path('recipe/<int:recipe_id>/', views.read_recipe, name="read_recipe"),
     path('categories/', views.list_categories, name="list_categories"),
 ]
-

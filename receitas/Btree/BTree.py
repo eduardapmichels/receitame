@@ -53,7 +53,7 @@ class BTree:
     
         connector = "└── " if is_last else "├── "
 
-        # Mostrar chaves do nó
+        # Mostrar chaves do nó 
         if node.is_leaf:
             print(prefix + connector + f"Leaf { [k.time for k in node.nodes] }")
         else:

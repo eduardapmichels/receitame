@@ -4,11 +4,13 @@ from receitas.structs import *
 
 from receitas.invertedIndex.tagnode import TagNode
 
-
+#arvore binaria simples 
 class BinarySearchTree:
     def __init__(self):
         self.root=None
 
+
+#busca/insere     Se a tag já existe, retorna o nó. Se a tag é menor, vai para a esquerda. Se é maior, vai para a direita. Se o filho não existe, cria o nó novo ali.
     def binary_search(self, tag:str, current_node:TagNode):
         if(tag==current_node.tag):
             return current_node
@@ -29,6 +31,8 @@ class BinarySearchTree:
                 auxiliar.right=current_node      
         return current_node
     
+
+    #insere receita para uma tag. vazia cria raiz, se nao cahama a binary_search para achar ou criar tag, adiciona id da receita à lista do no 
     def insert_recipe(self,tag:str, id:int):
 
         if(self.root==None):
@@ -40,6 +44,7 @@ class BinarySearchTree:
             node = self.binary_search(tag, self.root)
             node.add_id(id)
 
+    #imprime arvore ordem
     def print_left_center(self, node: TagNode):
         if(node.left!=None):
             self.print_left_center(node.left)
@@ -48,13 +53,14 @@ class BinarySearchTree:
             self.print_left_center(node.right)
 
 
+    #cria arquivo invertido
     def to_inverted_file(self, name):
 
 
 
         tags_data = Path(f"receitas/data/tags_data_{name}.bin")
         tags_index = Path(f"receitas/data/tags_index_{name}.bin")
-
+        #abre arquivo
         with open(tags_data, "wb") as td, open(tags_index, "wb") as ti:
 
             def write_file(node, offset):

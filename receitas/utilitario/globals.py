@@ -3,9 +3,10 @@ from receitas.Btree.BTree import BTree
 from receitas.alfabeto_index import Trie
 from pathlib import Path
 
+#debug
 print("Carregando BTree, Trie e índices de Arquivos invertidos (init lazy)...")
 
-# inicialmente tenta carregar (como você já fazia)
+# carrega se nao existir retorna none
 BT = load_btree_pickle()
 TRIE = load_trie_pickle()
 TAGS = {
@@ -14,30 +15,28 @@ TAGS = {
     **load_tags("difficulty")
 }
 
+
+#chamada quando view precisa acessar trie, btree ou tags
 def ensure_indexes_loaded():
-    """
-    Garante que BT e TRIE não fiquem None. 
-    Chamadas idempotentes — seguras para chamar várias vezes.
-    """
     global BT, TRIE, TAGS
 
     if BT is None:
         print("[globals] BT is None -> criando BTree vazia e (re)tentando construir index")
-        # cria uma BTree vazia para não quebrar — dependendo do caso, você pode preferir
-        # reconstruir o índice chamando sua rotina de build (mas isso é custoso).
+        # cria uma BTree vazia para não quebrar
+        #tenta carregar se conseguir, substirui. Se nao conseguir, usa a vazia para nao quebrar
         BT = BTree(50)
-        # tenta carregar novamente do disco:
         bt_loaded = load_btree_pickle()
         if bt_loaded is not None:
             BT = bt_loaded
 
     if TRIE is None:
-        print("[globals] TRIE is None -> criando Trie vazia e tentando recarregar do disco")
+        #cria trie vazia, tenta carregar e isa a que conseguir carregar
         TRIE = Trie()  # instância vazia para não quebrar chamadas
         trie_loaded = load_trie_pickle()
         if trie_loaded is not None:
             TRIE = trie_loaded
 
+    #se dicionario vazio, tenta recarregar
     if not TAGS:
         print("[globals] TAGS vazio -> tentando recarregar tags")
         TAGS = {

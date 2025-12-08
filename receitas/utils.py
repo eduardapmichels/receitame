@@ -12,9 +12,15 @@ import re
 
 import math
 
+#funcao de leitura serve para ler os binarios para ver onde esta as receitas, ingredients e relaocoes
+
 ################################################
 #LEITURA DA RECEITA
 ################################################
+
+#abre recipes.bin, calcula offset receita (recipe_id -1) * tamanho registro
+# vai nesse ponto com o seek
+#le o registro e faz unpack e retorna campo 2 = instrucoes
 def get_recipe_instructions(recipe_id, file_path="receitas/data/recipes.bin"):
     with open(file_path, "rb") as f:
         offset = (recipe_id - 1) * RECIPE_STRUCT.size
@@ -25,7 +31,7 @@ def get_recipe_instructions(recipe_id, file_path="receitas/data/recipes.bin"):
         unpacked = RECIPE_STRUCT.unpack(data)
         return unpacked[2].decode("utf-8").strip("\x00")
 
-
+#le nome ingrediente do ingredients.bin
 def get_ingredient_name(ingredient_id, file="receitas/data/ingredients.bin"):
     with open(file, "rb") as f:
         offset = (ingredient_id - 1) * INGREDIENT_STRUCT.size
@@ -36,7 +42,7 @@ def get_ingredient_name(ingredient_id, file="receitas/data/ingredients.bin"):
         iid, name = INGREDIENT_STRUCT.unpack(data)
         return name.decode("utf-8").strip("\x00")
 
-
+#percorre todo o arquivo recipe_ingredients e pega os pares (recipe_id, ingredient_id, measurement)  para cada um que tem rid == recipe_id ele pefa o nome do ingrediente limpa a medida e monta a lista
 def get_recipe_ingredients(recipe_id, file="receitas/data/recipe_ingredients.bin"):
     ingredients = []
     with open(file, "rb") as f:
@@ -61,6 +67,8 @@ def get_recipe_ingredients(recipe_id, file="receitas/data/recipe_ingredients.bin
 ###########################################################
 #B+Tree
 ###########################################################
+
+#comceca raiz, desce ate primeiro no folha, percorre os nos-folhas ligados e para cada chave: se nao tiver tempo ignora, se tiver adiciona ids da chave. SAIU? calcula paginacao e mosta lista (btree é tempo de preparo)
 def get_recipes_page_bt(page=1, per_page=200, min_time=None, max_time=None):
     node = BT.root
     while not node.is_leaf:
@@ -113,6 +121,7 @@ def get_recipes_page_trie(page=1, per_page=200):
     total_pages = math.ceil(total_results / per_page)
 
     # agora pega apenas a página
+    #percorre alfabeticamente, quando encontra node.end, incrementa count, se tiver dentro da pagina add, se ja atingiu o final da pagina retorna
     def dfs(node):
         nonlocal count
         if node.end:
@@ -135,7 +144,9 @@ def get_recipes_page_trie(page=1, per_page=200):
 ###################################################################
 # Arquivos invertidos
 ###################################################################
+#os filtros das categories
 
+#verifica se a tag existe no indice e vai ate o offset, se count ids e retorna lista de recipe_id
 def load_tag_ids(name, tag, index):
     data_path = Path(f"receitas/data/tags_data_{name}.bin")
 
@@ -154,7 +165,7 @@ def load_tag_ids(name, tag, index):
     
     return ids
 
-
+#quando se marca mais de uma tag, pega a lista de ids de cada tag e retorna em conjunto, retorna interseccao e so retorna ids que aparece em todas
 def intersect_tags(tags, all_tags):
     """Retorna IDs que aparecem em todas as tags (modo AND)"""
     sets_of_ids = []
@@ -181,7 +192,7 @@ def intersect_tags(tags, all_tags):
     return result
 
 
-
+#le arquivo cuisines.bin e retorna todos os nomes de culinarias
 def load_all_cuisines():
     cuisines_path = Path("receitas/data/cuisines.bin")
     cuisines = []
@@ -204,6 +215,7 @@ def load_all_cuisines():
 # Funções comuns
 #####################################################################
 
+#recebe lista de id e retorna somente  apagina solicitada
 def paginate(all_filtered, page, per_page):
     start = (page - 1) * per_page
     end = page * per_page
@@ -220,7 +232,7 @@ def paginate(all_filtered, page, per_page):
 
 
 
-
+#le o titulo
 def get_recipe_title(recipe_id, file_path="receitas/data/recipes.bin"):
     with open(file_path, "rb") as f:
         offset = (recipe_id - 1) * RECIPE_STRUCT.size
@@ -232,7 +244,7 @@ def get_recipe_title(recipe_id, file_path="receitas/data/recipes.bin"):
         title = unpacked[1].decode("utf-8").strip('\x00')
         return title
     
-
+# le o tempo
 def get_recipe_time(recipe_id, file_path="receitas/data/recipes.bin"):
     with open(file_path, "rb") as f:
         offset = (recipe_id - 1) * RECIPE_STRUCT.size
@@ -244,6 +256,7 @@ def get_recipe_time(recipe_id, file_path="receitas/data/recipes.bin"):
         return unpacked[3]  # tempo da receita
 
 
+#converter string em inteiro
 def parse_int(value):
     try:
         if value is None or value == "":
@@ -253,13 +266,9 @@ def parse_int(value):
         return None
     
 
-
+#processa texto do formulario, se tiver fora do padrao da erro
 def process_ingredients_form(ingredients_input):
-    """
-    Processa o input do formulário de ingredientes.
-    Espera o formato: [quantidade] ingrediente, [quantidade] ingrediente, ...
-    Retorna duas listas: nomes de ingredientes e medidas.
-    """
+
     if not ingredients_input.strip():
         return None, None, "Nenhum ingrediente informado."
 
@@ -281,11 +290,9 @@ def process_ingredients_form(ingredients_input):
 
     return ingredients_list, ingredients_measurement, None
 
+#carrega todos ingredientes existentes, carrega todas receitas existentes para descobrir prox ids
 def save_recipe_to_bin(data):
-    """
-    Salva uma nova receita nos arquivos binários e atualiza TRIE e B+ Tree.
-    data: dict com keys -> title, time, difficulty, ingredients, instructions
-    """
+
     global BT
     global TRIE
     # Caminhos para arquivos binários
@@ -326,16 +333,18 @@ def save_recipe_to_bin(data):
     total_recipes += 1
     recipe_id = total_recipes
 
-    # Processar ingredientes
+    # Processa ingredientes pega [quantidade] nome
     ingredients_list = []
     ingredients_measurement = []
     pattern = r'\[(.*?)\]\s*(.*?)(?:,|$)'
     matches = re.findall(pattern, data['ingredients'])
     for measure, name in matches:
+        #nomes normalizados
         ingredients_list.append(name.strip().lower())
+        #medidas formatadas
         ingredients_measurement.append(f"[{measure.strip()}] {name.strip()}")
 
-    # Salvar nos arquivos binários
+    # Salvar nos arquivos binários 
     with open(r_path, "ab") as f_recipes, open(i_path, "ab") as f_ingredients, open(ri_path, "ab") as f_recipe_ingredients:
         total_ingredients, recipe_ingredients = add_ingredients(
             ingredients_list,
@@ -365,7 +374,7 @@ def save_recipe_to_bin(data):
             recipe_ingredients  # id da 1° relação receita-ingrediente
         ))
 
-    # Atualizar TRIE e B+ Tree incrementalmente
+    # Atualiza TRIE e B+ Tree incrementalmente
     TRIE.insert(data['title'].lower(), recipe_id, offset)
     BT = BTree(50)
     BT=build_bptree_index(BT)
