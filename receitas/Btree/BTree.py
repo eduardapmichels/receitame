@@ -6,26 +6,34 @@ from receitas.structs import *
 
 class BTree:
     def __init__(self, t):
-        self.t = t
-        self.root = Node(t, is_leaf=True)
+        self.t = t #grau min
+        self.root = Node(t, is_leaf=True) #comca no folha vazio 
 
-
+    #retorna raiz 
     def get_root(self):
         return self.root
 
     def insert_key(self, time: int, recipe_id):
+        #find_leaf encontra a folha apropriada (busca seguindo chave interna)
         leaf = self.root.find_leaf(time, recipe_id)
         if leaf is not None:
+            #insert_in_leaf insere a chave (time, id) numa folha ordenadamente 
             inserted = leaf.insert_in_leaf(time, recipe_id)
             if inserted and leaf.n > leaf.max_n:
                 self.handle_split(leaf)
 
+    #se passou limite chaves chama a handle
+    #divide um no quando ele fica cheio
+    #cada split devolve promoted - chave que sobe para o pai, right - novo nó a direita
     def handle_split(self, node: Node):
         if node.is_leaf:
             promoted, right = node.split_leaf()
         else:
             promoted, right = node.split_internal()
 
+        #caso especial do split da raiz
+        #cria nova raiz com 1 chave
+        # os dois nos resultantes do split viram filhos da nova raiz
         if node.parent is None:
             new_root = Node(self.t, is_leaf=False)
             new_root.nodes = [promoted]
@@ -36,6 +44,10 @@ class BTree:
             self.root = new_root
             return
 
+        #slit quando tem pai
+        #encontra posicao correta no pai 
+        #insere o ponteiro para o novo nó
+        #se o pai estourar o limite, faz split recursivo
         parent = node.parent
         if type(parent)==Node:
             pos = parent.binary_search(promoted.time, -1)
@@ -47,10 +59,8 @@ class BTree:
             if parent.n > parent.max_n:
                 self.handle_split(parent)
     
-
+    #imprime a arvore 
     def print_tree(self, node, prefix="", is_last=True):
-        """Imprime a árvore em formato de diretórios, incluindo ponteiro next nas folhas."""
-    
         connector = "└── " if is_last else "├── "
 
         # Mostrar chaves do nó 
@@ -66,11 +76,12 @@ class BTree:
                 self.print_tree(child, new_prefix, i == len(node.children) - 1)
 
     
-        
+#le o recipes.bin      
 def build_bptree_index(bpt: BTree):
     bin_path = Path("receitas/data/recipes.bin")
 
-
+    #abre arquivo
+    #le um registro por vez
     try:
         with open(bin_path, "rb") as f:
             start = time.time()
@@ -80,10 +91,12 @@ def build_bptree_index(bpt: BTree):
                     break   #ja leu arquivo
                 
 
+                #descompacta dados
                 unpacked = RECIPE_STRUCT.unpack(data) 
                 recipe_id = unpacked[0]
                 recipe_time = unpacked[3]
 
+                #insere na b+tree
                 bpt.insert_key(recipe_time, recipe_id)
 
             print("Tempo para ler + mongar b+tree;", time.time() - start, "segundos")
@@ -92,6 +105,7 @@ def build_bptree_index(bpt: BTree):
 
         index_path =  Path("receitas/data/bptree.bin")
 
+        #salva indice em bptree.bin
         with index_path.open("wb") as f:
             pickle.dump(bpt, f)
 
